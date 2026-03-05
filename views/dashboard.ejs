@@ -1,0 +1,3827 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Banvath Ranjit Naik — Enhanced Dashboard</title>
+
+  <!-- Bootstrap 5 -->
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+
+  <!-- ApexCharts -->
+  <script src="https://cdn.jsdelivr.net/npm/apexcharts"></script>
+
+  <!-- FullCalendar (vanilla) -->
+  <link href="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.css" rel="stylesheet" />
+  <script src="https://cdn.jsdelivr.net/npm/fullcalendar@6.1.8/main.min.js"></script>
+
+  <!-- GSAP -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+  <!-- FontAwesome -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+
+  <style>
+    /* ---------------------------
+       Enhanced theme with better contrast
+       --------------------------- */
+    :root{
+      --sidebar-bg: #2a155e; /* deep purple */
+      --accent-1: #6f4ef8;
+      --accent-2: #06b6d4;
+      --accent-3: #f97316;
+      --accent-4: #10b981;
+      --card-bg: #ffffff;
+      --page-bg: #f5f8ff;
+      --muted: #6b7280;
+      --text: #0f172a;
+      --glass-border: rgba(14,18,34,0.06);
+      --shadow: 0 8px 28px rgba(14,18,34,0.08);
+      --shadow-lg: 0 20px 40px rgba(14,18,34,0.12);
+      --settings-bg: rgba(139, 92, 246, 0.01);
+    }
+
+    *{box-sizing:border-box}
+    html,body{height:100%}
+    body{
+      margin:0;
+      font-family: Inter, system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial;
+      background: var(--page-bg);
+      color:var(--text);
+      -webkit-font-smoothing:antialiased;
+      -moz-osx-font-smoothing:grayscale;
+      padding: 18px;
+    }
+    a{ text-decoration:none }
+
+    /* layout */
+    .app {
+      max-width:1400px;
+      margin:0 auto;
+      display:grid;
+      grid-template-columns: 260px 1fr;
+      gap:20px;
+      align-items:start;
+    }
+
+    /* sidebar */
+    .sidebar {
+      background: linear-gradient(180deg, var(--sidebar-bg), #231045 80%);
+      color: white;
+      border-radius: 14px;
+      padding: 18px;
+      height: calc(100vh - 36px);
+      position: sticky;
+      top: 18px;
+      box-shadow: var(--shadow);
+      overflow:auto;
+      border:1px solid rgba(255,255,255,0.03);
+    }
+    .brand { display:flex; gap:12px; align-items:center; margin-bottom:14px }
+    .logo {
+      width:56px;height:56px;border-radius:12px;background:linear-gradient(135deg,var(--accent-1),var(--accent-2));
+      display:flex;align-items:center;justify-content:center;font-weight:800;color:white;font-size:16px;box-shadow:0 8px 28px rgba(111,78,248,0.18);
+    }
+    .brand h2{margin:0;font-size:16px}
+    .brand p{margin:0;font-size:12px;opacity:0.85}
+
+    .nav-link {
+      display:flex; align-items:center; gap:10px; padding:12px; border-radius:10px; color:rgba(255,255,255,0.9);
+      margin-bottom:8px; font-weight:600; cursor:pointer; transition: all .18s;
+    }
+    .nav-link:hover { transform: translateY(-3px); background: rgba(255,255,255,0.03); box-shadow: 0 5px 15px rgba(0,0,0,0.1) }
+    .nav-link.active { background: linear-gradient(90deg, rgba(255,255,255,0.05), rgba(255,255,255,0.02)); box-shadow: 0 10px 30px rgba(10,10,40,0.15) }
+    .nav-link i { font-size: 18px; width: 24px; text-align: center; }
+
+    .sidebar .muted { color: rgba(255,255,255,0.7); font-size:12px }
+
+    /* main content */
+    .main {
+      min-height: calc(100vh - 36px);
+      overflow:auto;
+    }
+    .topbar {
+      display:flex; justify-content:space-between; align-items:center; gap:12px;
+      background: var(--card-bg); padding:12px 16px; border-radius:12px; box-shadow: var(--shadow);
+      border:1px solid var(--glass-border);
+      margin-bottom:14px;
+    }
+    .search-input { width:100%; padding:8px 12px; border-radius:10px; border:1px solid var(--glass-border); color:var(--text) }
+
+    /* card/grid */
+    .card {
+      background: var(--card-bg); border-radius:12px; padding:14px; border:1px solid var(--glass-border);
+      box-shadow: var(--shadow);
+      transition: transform 0.2s, box-shadow 0.2s;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+    }
+    .grid {
+      display:grid; grid-template-columns: repeat(12,1fr); gap:14px;
+    }
+    .col-3 { grid-column: span 3; }
+    .col-4 { grid-column: span 4; }
+    .col-6 { grid-column: span 6; }
+    .col-8 { grid-column: span 8; }
+    .col-12 { grid-column: span 12; }
+
+    .stat { position: relative; overflow: hidden; }
+    .stat .icon { 
+      width:60px;height:60px;display:flex;align-items:center;justify-content:center;border-radius:12px;
+      background:linear-gradient(135deg,var(--accent-1),var(--accent-2));color:white;font-size:24px;
+      box-shadow: 0 8px 20px rgba(111,78,248,0.25);
+    }
+    .stat:nth-child(2) .icon { background: linear-gradient(135deg, var(--accent-3), #f59e0b); }
+    .stat:nth-child(3) .icon { background: linear-gradient(135deg, var(--accent-4), #34d399); }
+    .stat:nth-child(4) .icon { background: linear-gradient(135deg, #8b5cf6, #a855f7); }
+
+    /* content sections (SPA pages) - Different styles for each section */
+    .section {
+      display:none; /* hidden by default - JS toggles .active */
+      animation: fadeIn .32s ease both;
+    }
+    .section.active { display:block }
+
+    /* Different styles for each section */
+    #overview { background: transparent; }
+    #projectsPage { background: rgba(111, 78, 248, 0.01); }
+    #clientsPage { background: rgba(6, 182, 212, 0.01); }
+    #commitsPage { background: rgba(16, 185, 129, 0.01); }
+    #calendarPage { background: rgba(249, 115, 22, 0.01); }
+    #analyticsPage { background: rgba(139, 92, 246, 0.01); }
+    #portfolioPage { background: rgba(239, 68, 68, 0.01); }
+    #contactPage { background: rgba(59, 130, 246, 0.01); }
+    #settingsPage { background: var(--settings-bg); }
+
+    @keyframes fadeIn {
+      from { opacity:0; transform: translateY(6px) }
+      to { opacity:1; transform: translateY(0) }
+    }
+
+    /* Enhanced portfolio gallery */
+    .portfolio-grid { 
+      display:grid; 
+      grid-template-columns: repeat(auto-fill,minmax(250px,1fr)); 
+      gap:16px;
+    }
+    .portfolio-card { 
+      border-radius:12px; 
+      overflow:hidden; 
+      cursor:pointer; 
+      position:relative; 
+      transition: transform .18s, box-shadow .18s; 
+      height: 220px;
+    }
+    .portfolio-card img { width:100%; height:100%; object-fit:cover; display:block; transition: transform 0.3s; }
+    .portfolio-card:hover { transform: translateY(-6px); box-shadow: 0 20px 40px rgba(14,18,34,0.12) }
+    .portfolio-card:hover img { transform: scale(1.05); }
+    .portfolio-overlay { 
+      position:absolute; 
+      inset:0; 
+      display:flex; 
+      align-items:flex-end; 
+      padding:16px; 
+      color:white; 
+      background: linear-gradient(180deg, rgba(0,0,0,0) 30%, rgba(0,0,0,0.7));
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .portfolio-card:hover .portfolio-overlay { opacity: 1; }
+
+    /* Enhanced projects grid */
+    .projects-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .project-card {
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: var(--shadow);
+      transition: all 0.3s;
+      background: var(--card-bg);
+      cursor: pointer;
+      position: relative;
+      border-left: 4px solid var(--accent-1);
+    }
+    .project-card:hover {
+      transform: translateY(-5px);
+      box-shadow: var(--shadow-lg);
+      border-left: 4px solid var(--accent-2);
+    }
+    .project-image {
+      height: 160px;
+      width: 100%;
+      object-fit: cover;
+    }
+    .project-content {
+      padding: 16px;
+    }
+    .project-tech {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+      margin-top: 10px;
+    }
+    .tech-tag {
+      background: rgba(111,78,248,0.1);
+      color: var(--accent-1);
+      padding: 4px 8px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 500;
+    }
+
+    /* Clients Grid */
+    .clients-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+      gap: 20px;
+      margin-top: 20px;
+    }
+    .client-card {
+      background: var(--card-bg);
+      border-radius: 12px;
+      padding: 20px;
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      cursor: pointer;
+      transition: all 0.3s;
+      position: relative;
+      border-left: 4px solid var(--accent-2);
+    }
+    .client-card:hover {
+      transform: translateY(-3px);
+      box-shadow: var(--shadow-lg);
+      border-left: 4px solid var(--accent-1);
+    }
+    .client-avatar {
+      width: 60px;
+      height: 60px;
+      border-radius: 12px;
+      object-fit: cover;
+      border: 3px solid var(--accent-2);
+    }
+
+    /* calendar */
+    #calendar { border-radius:8px; padding:8px; background:transparent }
+    .fc .fc-button { background: var(--accent-1) !important; border-color: var(--accent-1) !important; }
+    .fc .fc-button:hover { background: var(--accent-2) !important; border-color: var(--accent-2) !important; }
+    .fc .fc-button-primary:not(:disabled).fc-button-active { background: var(--accent-3) !important; }
+
+    /* Enhanced Modal Styles */
+    .overlay-modal {
+      position:fixed; inset:0; display:none; align-items:center; justify-content:center; z-index:4000;
+      background: rgba(3,7,18,0.8);
+      backdrop-filter: blur(4px);
+      padding: 20px;
+    }
+    .overlay-modal.show { display:flex }
+
+    .modal-box {
+      background: var(--card-bg);
+      border-radius: 16px;
+      max-width: 900px;
+      width: 100%;
+      max-height: 90vh;
+      overflow-y: auto;
+      animation: modalAppear 0.3s ease;
+    }
+
+    @keyframes modalAppear {
+      from { opacity: 0; transform: scale(0.9); }
+      to { opacity: 1; transform: scale(1); }
+    }
+
+    .modal-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .modal-body {
+      padding: 20px;
+    }
+
+    .modal-images {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 15px;
+      margin: 20px 0;
+    }
+
+    .modal-img {
+      border-radius: 10px;
+      overflow: hidden;
+      height: 200px;
+      transition: transform 0.3s;
+    }
+    
+    .modal-img:hover {
+      transform: scale(1.02);
+    }
+
+    .modal-img img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    /* Simple modal for lightbox */
+    .overlay-modal .box { 
+      width:90%; max-width:820px; border-radius:16px; overflow:hidden; 
+      box-shadow: 0 25px 50px rgba(0,0,0,0.25);
+      animation: modalAppear 0.3s ease;
+    }
+
+    /* Enhanced contact form */
+    .contact-info-card {
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      color: white;
+      border-radius: 12px;
+      padding: 20px;
+      height: 100%;
+    }
+    .contact-info-item {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .contact-info-item i {
+      font-size: 20px;
+      width: 40px;
+      height: 40px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+    }
+
+    /* Edit Options */
+    .edit-options {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 5px;
+      opacity: 0;
+      transition: opacity 0.3s;
+    }
+    .project-card:hover .edit-options,
+    .client-card:hover .edit-options {
+      opacity: 1;
+    }
+    .edit-btn, .delete-btn {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: none;
+      cursor: pointer;
+      font-size: 12px;
+      transition: transform 0.2s;
+    }
+    .edit-btn {
+      background: var(--accent-1);
+      color: white;
+    }
+    .edit-btn:hover {
+      background: var(--accent-2);
+      transform: scale(1.1);
+    }
+    .delete-btn {
+      background: #ef4444;
+      color: white;
+    }
+    .delete-btn:hover {
+      background: #dc2626;
+      transform: scale(1.1);
+    }
+
+    /* Enhanced Contact Section */
+    .contact-section {
+      padding: 40px 0;
+    }
+    
+    .contact-form-container {
+      background: var(--card-bg);
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: var(--shadow-lg);
+    }
+    
+    .contact-form-container h3 {
+      color: var(--sidebar-bg);
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    
+    .contact-form-container .form-label {
+      font-weight: 600;
+      color: var(--text);
+      margin-bottom: 8px;
+    }
+    
+    .contact-form-container .form-control {
+      border: 1px solid var(--glass-border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      transition: all 0.3s;
+      background: rgba(255, 255, 255, 0.9);
+    }
+    
+    .contact-form-container .form-control:focus {
+      border-color: var(--accent-1);
+      box-shadow: 0 0 0 3px rgba(111, 78, 248, 0.1);
+    }
+    
+    .contact-form-container .btn-submit {
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      color: white;
+      border: none;
+      padding: 14px 32px;
+      border-radius: 10px;
+      font-weight: 600;
+      transition: all 0.3s;
+      width: 100%;
+    }
+    
+    .contact-form-container .btn-submit:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 10px 25px rgba(111, 78, 248, 0.3);
+    }
+    
+    .social-links {
+      display: flex;
+      gap: 15px;
+      margin-top: 20px;
+    }
+    
+    .social-link {
+      width: 45px;
+      height: 45px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--page-bg);
+      color: var(--accent-1);
+      font-size: 18px;
+      transition: all 0.3s;
+      text-decoration: none;
+    }
+    
+    .social-link:hover {
+      background: var(--accent-1);
+      color: white;
+      transform: translateY(-3px);
+    }
+    
+    .contact-feature {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+      margin-bottom: 25px;
+      padding: 20px;
+      background: rgba(111, 78, 248, 0.05);
+      border-radius: 12px;
+    }
+    
+    .contact-feature i {
+      font-size: 24px;
+      color: var(--accent-1);
+      width: 50px;
+      height: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: white;
+      border-radius: 12px;
+    }
+
+    /* Settings Page Styles */
+    .settings-section {
+      padding: 20px 0;
+    }
+    
+    .settings-card {
+      border-left: 4px solid var(--accent-1);
+    }
+    
+    .settings-item {
+      padding: 15px;
+      border-bottom: 1px solid var(--glass-border);
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    
+    .settings-item:last-child {
+      border-bottom: none;
+    }
+    
+    .settings-item label {
+      font-weight: 600;
+      color: var(--text);
+    }
+    
+    .settings-item .form-text {
+      color: var(--muted);
+      font-size: 13px;
+      margin-top: 5px;
+    }
+    
+    .form-switch .form-check-input:checked {
+      background-color: var(--accent-1);
+      border-color: var(--accent-1);
+    }
+    
+    .color-picker {
+      width: 30px;
+      height: 30px;
+      border-radius: 6px;
+      border: 2px solid var(--glass-border);
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    
+    .color-picker.active {
+      border-color: var(--accent-1);
+      box-shadow: 0 0 0 3px rgba(111, 78, 248, 0.2);
+    }
+    
+    .theme-preview {
+      width: 100px;
+      height: 60px;
+      border-radius: 8px;
+      border: 2px solid var(--glass-border);
+      overflow: hidden;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .theme-preview:hover {
+      transform: scale(1.05);
+    }
+    
+    .theme-preview.active {
+      border-color: var(--accent-1);
+      box-shadow: 0 0 0 3px rgba(111, 78, 248, 0.2);
+    }
+    
+    .theme-preview .theme-sidebar {
+      width: 30px;
+      height: 100%;
+      background: var(--sidebar-bg);
+      float: left;
+    }
+    
+    .theme-preview .theme-main {
+      width: 70px;
+      height: 100%;
+      background: var(--page-bg);
+      float: left;
+    }
+
+    /* responsive */
+    @media (max-width:1100px){
+      .app { grid-template-columns: 1fr; }
+      .sidebar { position:relative; height:auto; }
+      .grid { grid-template-columns: repeat(6,1fr) }
+      .col-3{grid-column:span 3} .col-4{grid-column:span 6} .col-6{grid-column:span 6} .col-8{grid-column:span 6}
+    }
+    
+    /* Enhanced filter for portfolio */
+    .filter-buttons {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+    }
+    .filter-btn {
+      background: var(--card-bg);
+      border: 1px solid var(--glass-border);
+      border-radius: 20px;
+      padding: 6px 16px;
+      font-size: 14px;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .filter-btn.active, .filter-btn:hover {
+      background: var(--accent-1);
+      color: white;
+    }
+    
+    /* Stats hover effects */
+    .stat-card {
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    .stat-card:hover {
+      transform: translateY(-5px);
+    }
+    
+    /* Calendar event details */
+    .event-details {
+      padding: 15px;
+      background: white;
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+
+    /* Status badges */
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 20px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-completed { background: #10b98120; color: #10b981; }
+    .status-in-progress { background: #3b82f620; color: #3b82f6; }
+    .status-planning { background: #f59e0b20; color: #f59e0b; }
+    .status-on-hold { background: #6b728020; color: #6b7280; }
+    .status-active { background: #06b6d420; color: #06b6d4; }
+
+    /* Search and filter bar */
+    .search-filter-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+      max-width: 400px;
+    }
+    .search-box input {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--glass-border);
+      background: var(--card-bg);
+      color: var(--text);
+    }
+
+    /* Toast notifications */
+    .toast {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      background: #10b981;
+      color: white;
+      padding: 12px 20px;
+      border-radius: 8px;
+      box-shadow: var(--shadow-lg);
+      z-index: 9999;
+      animation: slideIn 0.3s ease;
+    }
+    
+    @keyframes slideIn {
+      from { transform: translateX(100%); opacity: 0; }
+      to { transform: translateX(0); opacity: 1; }
+    }
+    
+    @keyframes slideOut {
+      from { transform: translateX(0); opacity: 1; }
+      to { transform: translateX(100%); opacity: 0; }
+    }
+
+    /* Section headers with unique styles */
+    .section-header {
+      padding: 20px;
+      border-radius: 12px;
+      margin-bottom: 20px;
+      background: linear-gradient(135deg, var(--accent-1), var(--accent-2));
+      color: white;
+    }
+    
+    #projectsPage .section-header { background: linear-gradient(135deg, var(--accent-1), #8b5cf6); }
+    #clientsPage .section-header { background: linear-gradient(135deg, var(--accent-2), #06b6d4); }
+    #commitsPage .section-header { background: linear-gradient(135deg, var(--accent-4), #34d399); }
+    #calendarPage .section-header { background: linear-gradient(135deg, var(--accent-3), #f59e0b); }
+    #analyticsPage .section-header { background: linear-gradient(135deg, #8b5cf6, #a855f7); }
+    #portfolioPage .section-header { background: linear-gradient(135deg, #ef4444, #f97316); }
+    #contactPage .section-header { background: linear-gradient(135deg, #3b82f6, #06b6d4); }
+    #settingsPage .section-header { background: linear-gradient(135deg, #6366f1, #8b5cf6); }
+    
+    /* Danger zone for settings */
+    .danger-zone {
+      border: 2px solid #ef4444;
+      border-radius: 12px;
+      padding: 20px;
+      background: rgba(239, 68, 68, 0.05);
+    }
+    
+    .danger-zone h5 {
+      color: #ef4444;
+    }
+    
+    /* Calendar add button */
+    .fc-addEvent-button {
+      background: var(--accent-4) !important;
+      border-color: var(--accent-4) !important;
+    }
+  </style>
+</head>
+<body>
+  <div class="app" role="application" aria-label="Dashboard app">
+
+    <!-- SIDEBAR -->
+    <aside class="sidebar" aria-label="Sidebar">
+      <div class="brand" role="banner">
+        <div class="logo" aria-hidden="true">BRN</div>
+        <div>
+          <h2>Banvath Ranjit Naik</h2>
+          <div class="muted">Full Stack Developer</div>
+        </div>
+      </div>
+
+      <!-- nav -->
+      <nav aria-label="Main navigation" role="navigation">
+        <div class="nav-link active" data-target="overview"><i class="fa-solid fa-house"></i> Overview</div>
+        <div class="nav-link" data-target="projectsPage"><i class="fa-regular fa-folder-open"></i> Projects</div>
+        <div class="nav-link" data-target="clientsPage"><i class="fa-solid fa-users"></i> Clients</div>
+        <div class="nav-link" data-target="commitsPage"><i class="fa-solid fa-code"></i> Commits</div>
+        <div class="nav-link" data-target="calendarPage"><i class="fa-regular fa-calendar"></i> Calendar</div>
+        <div class="nav-link" data-target="analyticsPage"><i class="fa-solid fa-chart-line"></i> Analytics</div>
+        <div class="nav-link" data-target="portfolioPage"><i class="fa-regular fa-image"></i> Portfolio</div>
+        <div class="nav-link" data-target="contactPage"><i class="fa-solid fa-envelope"></i> Contact</div>
+        <div class="nav-link" data-target="settingsPage"><i class="fa-solid fa-gear"></i> Settings</div>
+      </nav>
+
+      <hr style="border-color:rgba(255,255,255,0.04)">
+
+      <div style="margin-top:12px">
+        <div class="muted mb-2">Quick actions</div>
+        <button class="btn btn-sm w-100 mb-2" style="background: var(--accent-1); color: white;" onclick="showSection('projectsPage'); showAddProjectModal()"> <i class="fa-solid fa-plus"></i> Add Project</button>
+        <button class="btn btn-sm w-100 mb-2" style="background: var(--accent-2); color: white;" onclick="showSection('calendarPage'); showAddEventModal()"> <i class="fa-solid fa-calendar-plus"></i> Add Event</button>
+        <button class="btn btn-sm btn-outline-secondary w-100" onclick="downloadPortfolio()"> <i class="fa-solid fa-download"></i> Download CV</button>
+      </div>
+    </aside>
+
+    <!-- MAIN -->
+    <main class="main" role="main">
+      <!-- topbar -->
+      <div class="topbar" role="region" aria-label="Topbar">
+        <div style="display:flex;gap:10px;align-items:center;flex:1">
+          <button class="btn btn-sm btn-outline-secondary" onclick="toggleSidebarMobile()" aria-label="Toggle sidebar"><i class="fa-solid fa-bars"></i></button>
+          <input id="search" class="search-input" placeholder="Search projects, files..." aria-label="Search" onkeyup="searchContent()">
+        </div>
+        <div style="display:flex;gap:12px;align-items:center">
+          <button class="btn btn-sm btn-light position-relative" aria-label="Notifications">
+            <i class="fa-regular fa-bell"></i>
+            <span style="position:absolute;right:-6px;top:-6px;background:#ef4444;color:white;border-radius:99px;padding:2px 6px;font-size:11px">3</span>
+          </button>
+          <div style="display:flex;gap:10px;align-items:center">
+            <div style="text-align:right">
+              <div style="font-weight:700">Ranjit Naik</div>
+              <div style="font-size:12px;color:var(--muted)">Admin</div>
+            </div>
+            <img src="/images/Ranjit_pic.jpg" alt="Banavath Ranjit Naik" style="width:44px;height:44px;border-radius:8px;object-fit:cover">
+          </div>
+        </div>
+      </div>
+
+      <!-- SECTIONS (SPA pages) -->
+      <!-- Overview -->
+      <section id="overview" class="section active" aria-labelledby="overviewTitle">
+        <div class="section-header">
+          <h4 style="margin:0;color:white">Dashboard Overview</h4>
+          <div style="color:rgba(255,255,255,0.8)">Welcome back! Here's what's happening today.</div>
+        </div>
+        
+        <div class="grid">
+          <!-- Stats Cards - Now Clickable -->
+          <div class="card col-3 stat stat-card" onclick="showSection('projectsPage')">
+            <div style="display:flex;gap:12px;align-items:center">
+              <div class="icon"><i class="fa-solid fa-briefcase"></i></div>
+              <div>
+                <div id="projectsCount" style="font-weight:800;font-size:20px">12</div>
+                <div class="muted">Projects</div>
+              </div>
+            </div>
+            <div style="text-align:right;color:var(--accent-4); font-weight: 600;">+8%</div>
+          </div>
+
+          <div class="card col-3 stat stat-card" onclick="showSection('clientsPage')">
+            <div style="display:flex;gap:12px;align-items:center">
+              <div class="icon"><i class="fa-solid fa-users"></i></div>
+              <div>
+                <div id="clientsCount" style="font-weight:800;font-size:20px">5</div>
+                <div class="muted">Clients</div>
+              </div>
+            </div>
+            <div style="text-align:right;color:var(--accent-4); font-weight: 600;">+2</div>
+          </div>
+
+          <div class="card col-3 stat stat-card" onclick="showSection('commitsPage')">
+            <div style="display:flex;gap:12px;align-items:center">
+              <div class="icon"><i class="fa-solid fa-code"></i></div>
+              <div>
+                <div id="commitsCount" style="font-weight:800;font-size:20px">230</div>
+                <div class="muted">Commits</div>
+              </div>
+            </div>
+            <div style="text-align:right;color:var(--accent-3); font-weight: 600;">Active</div>
+          </div>
+
+          <div class="card col-3 stat stat-card" onclick="openRevenueDetails()">
+            <div style="display:flex;gap:12px;align-items:center">
+              <div class="icon"><i class="fa-solid fa-dollar-sign"></i></div>
+              <div>
+                <div id="revenue" style="font-weight:800;font-size:20px">$12k</div>
+                <div class="muted">Revenue</div>
+              </div>
+            </div>
+            <div style="text-align:right;color:var(--accent-4); font-weight: 600;">+12%</div>
+          </div>
+
+          <div class="card col-8">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+              <div>
+                <h4 style="margin:0">Overview</h4>
+                <div class="muted small">Traffic & Conversions</div>
+              </div>
+              <div>
+                <select id="rangeSelect" class="form-select form-select-sm" style="width:120px">
+                  <option value="7">7d</option>
+                  <option value="30" selected>30d</option>
+                  <option value="90">90d</option>
+                </select>
+              </div>
+            </div>
+            <div id="areaChart" class="card" style="padding:6px; height:340px"></div>
+          </div>
+
+          <div class="card col-4">
+            <div style="margin-bottom:10px;display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <h5 style="margin:0">Sessions</h5>
+                <div class="muted small">Last 30 days</div>
+              </div>
+              <div style="font-weight:700">2.3k</div>
+            </div>
+            <div id="spark1" style="height:110px"></div>
+            <hr>
+            <div style="display:flex;justify-content:space-between;align-items:center">
+              <div>
+                <h6 style="margin:0">Conversions</h6>
+                <div class="muted small">Goal</div>
+              </div>
+              <div style="font-weight:700">18%</div>
+            </div>
+            <div id="donutChart" style="height:150px;margin-top:8px"></div>
+          </div>
+
+          <div class="card col-4">
+            <h5 style="margin-top:0">Quick Projects</h5>
+            <div style="margin-top:8px">
+              <!-- clickable project lines that open Projects page with details -->
+              <div class="d-flex justify-content-between align-items-center py-2 border-bottom" style="cursor:pointer" onclick="openProjectAndShow(1)">
+                <div><strong>TaskFlow Pro</strong><div class="muted small">Team collaboration app</div></div>
+                <div class="badge bg-primary">Featured</div>
+              </div>
+              <div class="d-flex justify-content-between align-items-center py-2 border-bottom" style="cursor:pointer" onclick="openProjectAndShow(2)">
+                <div><strong>FitTrack Pro</strong><div class="muted small">Mobile fitness</div></div>
+                <div class="badge bg-success">Active</div>
+              </div>
+              <div class="d-flex justify-content-between align-items-center py-2" style="cursor:pointer" onclick="openProjectAndShow(3)">
+                <div><strong>Creative Portfolio</strong><div class="muted small">Design prototype</div></div>
+                <div class="badge bg-secondary">Completed</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="card col-8">
+            <h5 style="margin-top:0">Recent Activity</h5>
+            <ul class="list-unstyled mt-2">
+              <li class="py-2 border-bottom d-flex justify-content-between align-items-center">
+                <div><i class="fa-solid fa-rocket text-primary me-2"></i><strong>Deploy</strong> Updated API routes</div>
+                <div class="muted small">2h ago</div>
+              </li>
+              <li class="py-2 border-bottom d-flex justify-content-between align-items-center">
+                <div><i class="fa-solid fa-palette text-success me-2"></i><strong>Design</strong> New landing hero</div>
+                <div class="muted small">1d ago</div>
+              </li>
+              <li class="py-2 d-flex justify-content-between align-items-center">
+                <div><i class="fa-solid fa-bug text-danger me-2"></i><strong>Bugfix</strong> Auth token fix</div>
+                <div class="muted small">3d ago</div>
+              </li>
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Projects page -->
+      <section id="projectsPage" class="section" aria-labelledby="projectsTitle">
+        <div class="section-header">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h4 style="margin:0;color:white">Projects</h4>
+              <div style="color:rgba(255,255,255,0.8)">Manage and preview all your projects</div>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-light me-2" onclick="showSection('overview')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+              <button class="btn btn-sm btn-light" onclick="showAddProjectModal()"><i class="fa-solid fa-plus"></i> Add New Project</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card col-12">
+            <!-- Search and filter bar -->
+            <div class="search-filter-bar">
+              <div class="search-box">
+                <i class="fa-solid fa-search" style="color:var(--muted)"></i>
+                <input type="text" id="projectSearch" placeholder="Search projects by name or technology..." onkeyup="searchProjects()">
+              </div>
+              <div class="filter-buttons">
+                <button class="filter-btn active" onclick="filterProjects('all')">All</button>
+                <button class="filter-btn" onclick="filterProjects('completed')">Completed</button>
+                <button class="filter-btn" onclick="filterProjects('in-progress')">In Progress</button>
+                <button class="filter-btn" onclick="filterProjects('planning')">Planning</button>
+              </div>
+            </div>
+
+            <div class="mt-3">
+              <div class="projects-grid" id="projectsContainer">
+                <!-- Projects will be dynamically added here -->
+              </div>
+              <div id="noProjectsMessage" style="display:none; text-align:center; padding:40px; color:var(--muted)">
+                <i class="fa-solid fa-folder-open" style="font-size:48px; margin-bottom:16px"></i>
+                <h5>No projects found</h5>
+                <p>Try adjusting your search or add a new project</p>
+                <button class="btn btn-sm btn-primary" onclick="showAddProjectModal()">Add Your First Project</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Clients page -->
+      <section id="clientsPage" class="section" aria-labelledby="clientsTitle">
+        <div class="section-header">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h4 style="margin:0;color:white">Clients</h4>
+              <div style="color:rgba(255,255,255,0.8)">My valued clients and collaborations</div>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-light me-2" onclick="showSection('overview')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+              <button class="btn btn-sm btn-light" onclick="showAddClientModal()"><i class="fa-solid fa-user-plus"></i> Add New Client</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card col-12">
+            <div class="mt-3">
+              <div class="clients-grid" id="clientsContainer">
+                <!-- Clients will be dynamically added here -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Commits page -->
+      <section id="commitsPage" class="section" aria-labelledby="commitsTitle">
+        <div class="section-header">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h4 style="margin:0;color:white">Code Commits</h4>
+              <div style="color:rgba(255,255,255,0.8)">Recent code contributions and activity</div>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-light" onclick="showSection('overview')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card col-12">
+            <div class="mt-3">
+              <div class="card p-3">
+                <h6>Commit Activity</h6>
+                <div id="commitChart" style="height:300px"></div>
+              </div>
+              
+              <div class="mt-3">
+                <h6>Recent Commits</h6>
+                <ul class="list-unstyled mt-2">
+                  <li class="py-2 border-bottom d-flex justify-content-between">
+                    <div><i class="fa-brands fa-git-alt text-primary me-2"></i><strong>Fix:</strong> Authentication middleware</div>
+                    <div class="muted small">2 hours ago</div>
+                  </li>
+                  <li class="py-2 border-bottom d-flex justify-content-between">
+                    <div><i class="fa-brands fa-git-alt text-success me-2"></i><strong>Feature:</strong> Add dark mode toggle</div>
+                    <div class="muted small">1 day ago</div>
+                  </li>
+                  <li class="py-2 border-bottom d-flex justify-content-between">
+                    <div><i class="fa-brands fa-git-alt text-warning me-2"></i><strong>Refactor:</strong> API response formatting</div>
+                    <div class="muted small">2 days ago</div>
+                  </li>
+                  <li class="py-2 d-flex justify-content-between">
+                    <div><i class="fa-brands fa-git-alt text-info me-2"></i><strong>Docs:</strong> Update README</div>
+                    <div class="muted small">3 days ago</div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Calendar page -->
+      <section id="calendarPage" class="section">
+        <div class="section-header">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h4 style="margin:0;color:white">Calendar</h4>
+              <div style="color:rgba(255,255,255,0.8)">Events, meetings & schedules</div>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-light me-2" onclick="showSection('overview')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+              <button class="btn btn-sm btn-primary" onclick="showAddEventModal()"><i class="fa-solid fa-plus"></i> Add Event</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card col-12">
+            <div class="mt-3">
+              <div id="calendar"></div>
+              <div id="eventDetails" class="event-details" style="display:none;">
+                <h5 id="eventTitle">Event Title</h5>
+                <p id="eventDescription">Event description will appear here</p>
+                <p><strong>Date:</strong> <span id="eventDate">Date</span></p>
+                <button class="btn btn-sm btn-primary" onclick="document.getElementById('eventDetails').style.display='none'">Close</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Analytics page -->
+      <section id="analyticsPage" class="section">
+        <div class="section-header">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h4 style="margin:0;color:white">Analytics</h4>
+              <div style="color:rgba(255,255,255,0.8)">Deeper insights and metrics</div>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-light" onclick="showSection('overview')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card col-12">
+            <div class="mt-3 row g-3">
+              <div class="col-md-6">
+                <div class="card p-3">
+                  <h6>Traffic (Area)</h6>
+                  <div id="areaChartBig" style="height:300px"></div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card p-3">
+                  <h6>Top technologies</h6>
+                  <div id="barChartBig" style="height:300px"></div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card p-3">
+                  <h6>Project Status</h6>
+                  <div id="projectStatusChart" style="height:250px"></div>
+                </div>
+              </div>
+              <div class="col-md-6">
+                <div class="card p-3">
+                  <h6>Conversion Mix</h6>
+                  <div id="donutChartBig" style="height:250px"></div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+      </section>
+
+      <!-- Portfolio page -->
+      <section id="portfolioPage" class="section">
+        <div class="section-header">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h4 style="margin:0;color:white">Portfolio Gallery</h4>
+              <div style="color:rgba(255,255,255,0.8)">Showcase of my best work</div>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-light" onclick="showSection('overview')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="card col-12">
+            <div class="filter-buttons mt-3">
+              <button class="filter-btn active" data-filter="all">All</button>
+              <button class="filter-btn" data-filter="web">Web Apps</button>
+              <button class="filter-btn" data-filter="mobile">Mobile</button>
+              <button class="filter-btn" data-filter="design">UI/UX</button>
+            </div>
+
+            <div class="mt-3 portfolio-grid" id="portfolioContainer">
+              <!-- Portfolio items will be dynamically added here -->
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Contact page - ENHANCED -->
+      <section id="contactPage" class="section contact-section">
+        <div class="section-header">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h4 style="margin:0;color:rgb(126, 122, 122)">Contact Me</h4>
+              <div style="color:rgba(255,255,255,0.8)">Let's create something amazing together!</div>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-light" onclick="showSection('overview')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="col-12">
+            <div class="contact-form-container">
+              <div class="row">
+                <div class="col-lg-8">
+                  <h3>Get In Touch</h3>
+                  <p class="text-muted mb-4">I'd love to hear about your project. Let's create something amazing together!</p>
+                  
+                  <form id="contactForm">
+                    <div class="row">
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">Your Name *</label>
+                        <input type="text" class="form-control" id="cname" placeholder="Banavath Ranjith Naik" required>
+                      </div>
+                      <div class="col-md-6 mb-3">
+                        <label class="form-label">Your Email *</label>
+                        <input type="email" class="form-control" id="cemail" placeholder="branjithnaik4@gmail.com" required>
+                      </div>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Subject *</label>
+                      <input type="text" class="form-control" id="csubject" placeholder="Project Inquiry" required>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Project Type</label>
+                      <select class="form-control" id="cprojectType">
+                        <option value="">Select Project Type</option>
+                        <option value="web">Web Development</option>
+                        <option value="mobile">Mobile App</option>
+                        <option value="uiux">UI/UX Design</option>
+                        <option value="consulting">Consulting</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                    <div class="mb-3">
+                      <label class="form-label">Your Message *</label>
+                      <textarea class="form-control" id="cmsg" rows="5" placeholder="Tell me about your project..." required></textarea>
+                    </div>
+                    <div class="mb-3">
+                      <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="newsletter" checked>
+                        <label class="form-check-label" for="newsletter">
+                          Subscribe to my newsletter for updates
+                        </label>
+                      </div>
+                    </div>
+                    <button type="submit" class="btn btn-submit">
+                      <i class="fa-solid fa-paper-plane me-2"></i> Send Message
+                    </button>
+                  </form>
+                </div>
+                
+                <div class="col-lg-4 mt-4 mt-lg-0">
+                  <div class="contact-feature">
+                    <i class="fa-solid fa-clock"></i>
+                    <div>
+                      <h5 class="mb-1">Quick Response</h5>
+                      <p class="text-muted mb-0">I typically respond within 24 hours</p>
+                    </div>
+                  </div>
+                  
+                  <div class="contact-feature">
+                    <i class="fa-solid fa-headset"></i>
+                    <div>
+                      <h5 class="mb-1">Support Available</h5>
+                      <p class="text-muted mb-0">Mon-Fri, 9AM-6PM IST</p>
+                    </div>
+                  </div>
+                  
+                  <div class="contact-feature">
+                    <i class="fa-solid fa-shield-alt"></i>
+                    <div>
+                      <h5 class="mb-1">Confidential</h5>
+                      <p class="text-muted mb-0">Your ideas are safe with me</p>
+                    </div>
+                  </div>
+                  
+                  <div class="mt-4">
+                    <h5>Contact Information</h5>
+                    <div class="contact-info-item mt-3">
+                      <i class="fa-solid fa-envelope"></i>
+                      <div>
+                        <div style="font-weight:600">Email</div>
+                        <div>branjithnaik4@gmail.com</div>
+                      </div>
+                    </div>
+                    <div class="contact-info-item">
+                      <i class="fa-solid fa-phone"></i>
+                      <div>
+                        <div style="font-weight:600">Phone</div>
+                        <div>+91 9704501183</div>
+                      </div>
+                    </div>
+                    <div class="contact-info-item">
+                      <i class="fa-solid fa-location-dot"></i>
+                      <div>
+                        <div style="font-weight:600">Location</div>
+                        <div>Hyderabad, India</div>
+                      </div>
+                    </div>
+                    
+                    <h5 class="mt-4">Follow Me</h5>
+                    <div class="social-links">
+                      <a href="https://www.linkedin.com/in/branjitnaik/" class="social-link" title="LinkedIn">
+                        <i class="fab fa-linkedin-in"></i>
+                      </a>
+                      <a href="#" class="social-link" title="GitHub">
+                        <i class="fab fa-github"></i>
+                      </a>
+                      <a href="#" class="social-link" title="Twitter">
+                        <i class="fab fa-twitter"></i>
+                      </a>
+                      <a href="https://www.instagram.com/__ranjith__roy__99/" class="social-link" title="Instagram">
+                        <i class="fab fa-instagram"></i>
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Settings page -->
+      <section id="settingsPage" class="section settings-section">
+        <div class="section-header">
+          <div style="display:flex;justify-content:space-between;align-items:center">
+            <div>
+              <h4 style="margin:0;color:white">Settings</h4>
+              <div style="color:rgba(255,255,255,0.8)">Customize your dashboard experience</div>
+            </div>
+            <div>
+              <button class="btn btn-sm btn-light" onclick="showSection('overview')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            </div>
+          </div>
+        </div>
+
+        <div class="grid">
+          <div class="col-12">
+            <div class="card settings-card">
+              <div class="modal-header">
+                <h5 style="margin:0">General Settings</h5>
+              </div>
+              <div class="modal-body">
+                <div class="settings-item">
+                  <div>
+                    <label>Dashboard Theme</label>
+                    <div class="form-text">Choose your preferred color scheme</div>
+                    <div class="d-flex mt-3" id="themeOptions">
+                      <div class="theme-preview active" data-theme="default" onclick="changeTheme('default')">
+                        <div class="theme-sidebar"></div>
+                        <div class="theme-main"></div>
+                      </div>
+                      <div class="theme-preview ms-3" data-theme="dark" onclick="changeTheme('dark')">
+                        <div class="theme-sidebar" style="background: #1a1a2e;"></div>
+                        <div class="theme-main" style="background: #16213e;"></div>
+                      </div>
+                      <div class="theme-preview ms-3" data-theme="light" onclick="changeTheme('light')">
+                        <div class="theme-sidebar" style="background: #4361ee;"></div>
+                        <div class="theme-main" style="background: #f8f9fa;"></div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="settings-item">
+                  <div>
+                    <label>Sidebar Color</label>
+                    <div class="form-text">Customize sidebar background color</div>
+                    <div class="d-flex mt-3" id="sidebarColors">
+                      <div class="color-picker active" style="background: #2a155e;" data-color="#2a155e" onclick="changeSidebarColor('#2a155e')"></div>
+                      <div class="color-picker" style="background: #1e3a8a;" data-color="#1e3a8a" onclick="changeSidebarColor('#1e3a8a')"></div>
+                      <div class="color-picker" style="background: #0f172a;" data-color="#0f172a" onclick="changeSidebarColor('#0f172a')"></div>
+                      <div class="color-picker" style="background: #1e40af;" data-color="#1e40af" onclick="changeSidebarColor('#1e40af')"></div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="settings-item">
+                  <div>
+                    <label>Notifications</label>
+                    <div class="form-text">Control how you receive notifications</div>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="emailNotifications" checked>
+                    <label class="form-check-label" for="emailNotifications">Email notifications</label>
+                  </div>
+                </div>
+                
+                <div class="settings-item">
+                  <div>
+                    <label>Push Notifications</label>
+                    <div class="form-text">Receive push notifications in your browser</div>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="pushNotifications" checked>
+                    <label class="form-check-label" for="pushNotifications">Enable push notifications</label>
+                  </div>
+                </div>
+                
+                <div class="settings-item">
+                  <div>
+                    <label>Data Refresh Interval</label>
+                    <div class="form-text">How often dashboard data refreshes (in minutes)</div>
+                  </div>
+                  <select class="form-select" style="width: 120px;" id="refreshInterval">
+                    <option value="1">1 minute</option>
+                    <option value="5" selected>5 minutes</option>
+                    <option value="10">10 minutes</option>
+                    <option value="30">30 minutes</option>
+                    <option value="60">1 hour</option>
+                  </select>
+                </div>
+                
+                <div class="settings-item">
+                  <div>
+                    <label>Default View</label>
+                    <div class="form-text">Choose which section opens by default</div>
+                  </div>
+                  <select class="form-select" style="width: 150px;" id="defaultView">
+                    <option value="overview" selected>Overview</option>
+                    <option value="projectsPage">Projects</option>
+                    <option value="calendarPage">Calendar</option>
+                    <option value="analyticsPage">Analytics</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card settings-card mt-4">
+              <div class="modal-header">
+                <h5 style="margin:0">Account Settings</h5>
+              </div>
+              <div class="modal-body">
+                <div class="settings-item">
+                  <div>
+                    <label>Profile Information</label>
+                    <div class="form-text">Update your personal information</div>
+                  </div>
+                  <button class="btn btn-sm btn-outline-primary" onclick="editProfile()">Edit Profile</button>
+                </div>
+                
+                <div class="settings-item">
+                  <div>
+                    <label>Change Password</label>
+                    <div class="form-text">Update your password regularly for security</div>
+                  </div>
+                  <button class="btn btn-sm btn-outline-primary" onclick="changePassword()">Change Password</button>
+                </div>
+                
+                <div class="settings-item">
+                  <div>
+                    <label>Two-Factor Authentication</label>
+                    <div class="form-text">Add an extra layer of security to your account</div>
+                  </div>
+                  <div class="form-check form-switch">
+                    <input class="form-check-input" type="checkbox" id="twoFactorAuth">
+                    <label class="form-check-label" for="twoFactorAuth">Enable 2FA</label>
+                  </div>
+                </div>
+                
+                <div class="settings-item">
+                  <div>
+                    <label>Email Preferences</label>
+                    <div class="form-text">Choose which emails you want to receive</div>
+                  </div>
+                  <button class="btn btn-sm btn-outline-primary" onclick="emailPreferences()">Manage Emails</button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="card settings-card mt-4">
+              <div class="modal-header">
+                <h5 style="margin:0">Data Management</h5>
+              </div>
+              <div class="modal-body">
+                <div class="settings-item">
+                  <div>
+                    <label>Export Data</label>
+                    <div class="form-text">Download all your data in JSON format</div>
+                  </div>
+                  <button class="btn btn-sm btn-outline-primary" onclick="exportData()">Export Data</button>
+                </div>
+                
+                <div class="settings-item">
+                  <div>
+                    <label>Import Data</label>
+                    <div class="form-text">Import data from previous exports</div>
+                  </div>
+                  <button class="btn btn-sm btn-outline-primary" onclick="importData()">Import Data</button>
+                </div>
+                
+                <div class="settings-item">
+                  <div>
+                    <label>Clear Cache</label>
+                    <div class="form-text">Clear locally stored cache data</div>
+                  </div>
+                  <button class="btn btn-sm btn-outline-warning" onclick="clearCache()">Clear Cache</button>
+                </div>
+              </div>
+            </div>
+            
+            <div class="danger-zone mt-4">
+              <h5>Danger Zone</h5>
+              <p class="text-muted">These actions are irreversible. Please proceed with caution.</p>
+              
+              <div class="settings-item">
+                <div>
+                  <label class="text-danger">Delete Account</label>
+                  <div class="form-text">Permanently delete your account and all data</div>
+                </div>
+                <button class="btn btn-sm btn-outline-danger" onclick="deleteAccount()">Delete Account</button>
+              </div>
+              
+              <div class="settings-item">
+                <div>
+                  <label class="text-danger">Reset All Data</label>
+                  <div class="form-text">Reset all projects, clients, and settings to default</div>
+                </div>
+                <button class="btn btn-sm btn-outline-danger" onclick="resetAllData()">Reset All Data</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <footer style="margin-top:18px;color:var(--muted);text-align:center">© <span id="year"></span> Banvath Ranjit Naik</footer>
+    </main>
+  </div>
+
+  <!-- Enhanced Project Detail Modal -->
+  <div id="projectModal" class="overlay-modal" role="dialog" aria-hidden="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h4 id="modalProjectTitle">Project Details</h4>
+        <button class="btn btn-sm btn-outline-secondary" onclick="closeModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-images" id="modalProjectImages">
+          <!-- Project images will be inserted here -->
+        </div>
+        <div id="modalProjectContent">
+          <!-- Project content will be inserted here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enhanced Client Detail Modal -->
+  <div id="clientModal" class="overlay-modal" role="dialog" aria-hidden="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h4 id="modalClientTitle">Client Details</h4>
+        <button class="btn btn-sm btn-outline-secondary" onclick="closeModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <div class="modal-images" id="modalClientImages">
+          <!-- Client images will be inserted here -->
+        </div>
+        <div id="modalClientContent">
+          <!-- Client content will be inserted here -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Revenue Details Modal -->
+  <div id="revenueDetail" class="overlay-modal" role="dialog" aria-hidden="true">
+    <div class="box card">
+      <div style="display:flex;justify-content:space-between;align-items:center">
+        <h5 id="revenueTitle" style="margin:0">Revenue Details</h5>
+        <button class="btn btn-sm btn-outline-secondary" onclick="closeRevenueDetails()">Close</button>
+      </div>
+      <div style="margin-top:12px">
+        <div class="card p-3">
+          <h6>Revenue Breakdown</h6>
+          <div id="revenueChart" style="height:300px"></div>
+        </div>
+        <div class="mt-3">
+          <h6>Revenue Sources</h6>
+          <ul class="list-unstyled">
+            <li class="py-2 border-bottom d-flex justify-content-between">
+              <div>Web Development</div>
+              <div class="fw-bold">$7,200</div>
+            </li>
+            <li class="py-2 border-bottom d-flex justify-content-between">
+              <div>Mobile Apps</div>
+              <div class="fw-bold">$3,500</div>
+            </li>
+            <li class="py-2 d-flex justify-content-between">
+              <div>Consulting</div>
+              <div class="fw-bold">$1,300</div>
+            </li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add project modal -->
+  <div id="addProjectModal" class="overlay-modal" aria-hidden="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h4>Add New Project</h4>
+        <button class="btn btn-sm btn-outline-secondary" onclick="closeAddProjectModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="newProjectForm">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Project Title *</label>
+              <input type="text" class="form-control" id="projectTitle" placeholder="E.g., E-commerce Website" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Client</label>
+              <input type="text" class="form-control" id="projectClient" placeholder="Client name (optional)">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description *</label>
+            <textarea class="form-control" id="projectDescription" rows="3" placeholder="Brief description of the project..." required></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Technologies * (comma separated)</label>
+            <input type="text" class="form-control" id="projectTechnologies" placeholder="React, Node.js, MongoDB, Tailwind CSS" required>
+            <div class="form-text">Separate technologies with commas</div>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Status *</label>
+              <select class="form-control" id="projectStatus" required>
+                <option value="">Select Status</option>
+                <option value="Planning">Planning</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Active">Active</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Revenue ($)</label>
+              <input type="number" class="form-control" id="projectRevenue" placeholder="5000">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Image URL *</label>
+            <input type="text" class="form-control" id="projectImage" placeholder="https://example.com/project-image.jpg" required>
+            <div class="form-text">You can use Unsplash URLs like: https://images.unsplash.com/photo-1551650975-87deedd944c3</div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Detailed Description (Optional)</label>
+            <textarea class="form-control" id="projectDetails" rows="4" placeholder="More detailed information about the project..."></textarea>
+          </div>
+          <div class="d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-outline-secondary" onclick="closeAddProjectModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Project</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Project Modal -->
+  <div id="editProjectModal" class="overlay-modal" aria-hidden="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h4>Edit Project</h4>
+        <button class="btn btn-sm btn-outline-secondary" onclick="closeEditProjectModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="editProjectForm">
+          <input type="hidden" id="editProjectId">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Project Title *</label>
+              <input type="text" class="form-control" id="editProjectTitle" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Client</label>
+              <input type="text" class="form-control" id="editProjectClient">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description *</label>
+            <textarea class="form-control" id="editProjectDescription" rows="3" required></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Technologies * (comma separated)</label>
+            <input type="text" class="form-control" id="editProjectTechnologies" required>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Status *</label>
+              <select class="form-control" id="editProjectStatus" required>
+                <option value="Planning">Planning</option>
+                <option value="In Progress">In Progress</option>
+                <option value="Completed">Completed</option>
+                <option value="On Hold">On Hold</option>
+                <option value="Active">Active</option>
+              </select>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Revenue ($)</label>
+              <input type="number" class="form-control" id="editProjectRevenue">
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Image URL *</label>
+            <input type="text" class="form-control" id="editProjectImage" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Detailed Description</label>
+            <textarea class="form-control" id="editProjectDetails" rows="4"></textarea>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="closeEditProjectModal()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Client Modal -->
+  <div id="addClientModal" class="overlay-modal" aria-hidden="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h4>Add New Client</h4>
+        <button class="btn btn-sm btn-outline-secondary" onclick="closeAddClientModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="newClientForm">
+          <div class="mb-3">
+            <label class="form-label">Client Name *</label>
+            <input type="text" class="form-control" id="clientName" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Company *</label>
+            <input type="text" class="form-control" id="clientCompany" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email *</label>
+            <input type="email" class="form-control" id="clientEmail" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Phone</label>
+            <input type="tel" class="form-control" id="clientPhone">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" id="clientDescription" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Avatar URL</label>
+            <input type="text" class="form-control" id="clientAvatar" placeholder="https://example.com/avatar.jpg">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select class="form-control" id="clientStatus">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+              <option value="Prospect">Prospect</option>
+            </select>
+          </div>
+          <button type="submit" class="btn btn-primary">Add Client</button>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Client Modal -->
+  <div id="editClientModal" class="overlay-modal" aria-hidden="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h4>Edit Client</h4>
+        <button class="btn btn-sm btn-outline-secondary" onclick="closeEditClientModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="editClientForm">
+          <input type="hidden" id="editClientId">
+          <div class="mb-3">
+            <label class="form-label">Client Name *</label>
+            <input type="text" class="form-control" id="editClientName" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Company *</label>
+            <input type="text" class="form-control" id="editClientCompany" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email *</label>
+            <input type="email" class="form-control" id="editClientEmail" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Phone</label>
+            <input type="tel" class="form-control" id="editClientPhone">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" id="editClientDescription" rows="3"></textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Avatar URL</label>
+            <input type="text" class="form-control" id="editClientAvatar">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Status</label>
+            <select class="form-control" id="editClientStatus">
+              <option value="Active">Active</option>
+              <option value="Inactive">Inactive</option>
+              <option value="Prospect">Prospect</option>
+            </select>
+          </div>
+          <div class="d-flex gap-2">
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+            <button type="button" class="btn btn-outline-secondary" onclick="closeEditClientModal()">Cancel</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Add Event Modal -->
+  <div id="addEventModal" class="overlay-modal" aria-hidden="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h4>Add New Event</h4>
+        <button class="btn btn-sm btn-outline-secondary" onclick="closeAddEventModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="newEventForm">
+          <div class="mb-3">
+            <label class="form-label">Event Title *</label>
+            <input type="text" class="form-control" id="eventTitle" placeholder="Meeting with Client" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Description</label>
+            <textarea class="form-control" id="eventDescription" rows="3" placeholder="Event details..."></textarea>
+          </div>
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Start Date *</label>
+              <input type="datetime-local" class="form-control" id="eventStart" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">End Date *</label>
+              <input type="datetime-local" class="form-control" id="eventEnd" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Event Color</label>
+            <div class="d-flex mt-2">
+              <div class="color-picker active" style="background: #6f4ef8;" data-color="#6f4ef8" onclick="selectEventColor('#6f4ef8')"></div>
+              <div class="color-picker ms-2" style="background: #06b6d4;" data-color="#06b6d4" onclick="selectEventColor('#06b6d4')"></div>
+              <div class="color-picker ms-2" style="background: #10b981;" data-color="#10b981" onclick="selectEventColor('#10b981')"></div>
+              <div class="color-picker ms-2" style="background: #f97316;" data-color="#f97316" onclick="selectEventColor('#f97316')"></div>
+              <div class="color-picker ms-2" style="background: #8b5cf6;" data-color="#8b5cf6" onclick="selectEventColor('#8b5cf6')"></div>
+            </div>
+            <input type="hidden" id="eventColor" value="#6f4ef8">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Event Type</label>
+            <select class="form-control" id="eventType">
+              <option value="meeting">Meeting</option>
+              <option value="deadline">Deadline</option>
+              <option value="reminder">Reminder</option>
+              <option value="personal">Personal</option>
+              <option value="work">Work</option>
+            </select>
+          </div>
+          <div class="mb-3">
+            <div class="form-check">
+              <input class="form-check-input" type="checkbox" id="allDayEvent">
+              <label class="form-check-label" for="allDayEvent">
+                All-day event
+              </label>
+            </div>
+          </div>
+          <div class="d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-outline-secondary" onclick="closeAddEventModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Add Event</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Profile Edit Modal -->
+  <div id="profileModal" class="overlay-modal" aria-hidden="true">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h4>Edit Profile</h4>
+        <button class="btn btn-sm btn-outline-secondary" onclick="closeProfileModal()">
+          <i class="fa-solid fa-times"></i>
+        </button>
+      </div>
+      <div class="modal-body">
+        <form id="profileForm">
+          <div class="row">
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Full Name *</label>
+              <input type="text" class="form-control" id="profileName" value="Banavath Ranjith Naik" required>
+            </div>
+            <div class="col-md-6 mb-3">
+              <label class="form-label">Title *</label>
+              <input type="text" class="form-control" id="profileTitle" value="Full Stack Developer" required>
+            </div>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Email *</label>
+            <input type="email" class="form-control" id="profileEmail" value="branjithnaik4@gmail.com" required>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Phone</label>
+            <input type="tel" class="form-control" id="profilePhone" value="+91 9704501183">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Location</label>
+            <input type="text" class="form-control" id="profileLocation" value="Hyderabad, India">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Bio</label>
+            <textarea class="form-control" id="profileBio" rows="3">Full Stack Developer with expertise in React, Node.js, and cloud technologies. Passionate about creating efficient and scalable web applications.</textarea>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Profile Picture URL</label>
+            <input type="text" class="form-control" id="profileAvatar" placeholder="https://example.com/avatar.jpg">
+          </div>
+          <div class="d-flex gap-2 justify-content-end">
+            <button type="button" class="btn btn-outline-secondary" onclick="closeProfileModal()">Cancel</button>
+            <button type="submit" class="btn btn-primary">Save Changes</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- libs -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // =============== Data Management ===============
+    let projectsData = [
+      {
+        id: 1,
+        title: "TaskFlow Pro",
+        description: "Team collaboration and analytics platform",
+        technologies: ["Vue.js", "Firebase", "PWA", "Node.js"],
+        client: "TechCorp Inc.",
+        image: "https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1611224923853-80b023f02d71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+        ],
+        details: "A comprehensive team collaboration tool with real-time updates, task management, and analytics dashboard. Built with modern web technologies for optimal performance. Features include real-time chat, task assignment, file sharing, and progress tracking.",
+        status: "Completed",
+        revenue: "$15,000"
+      },
+      {
+        id: 2,
+        title: "FitTrack Pro",
+        description: "Cross-platform fitness tracking application",
+        technologies: ["React Native", "Health API", "Redux", "Firebase"],
+        client: "HealthFirst Ltd.",
+        image: "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1571019614242-c5c5dee863f8?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+        ],
+        details: "A cross-platform fitness tracking application that syncs with health APIs to provide comprehensive workout and nutrition tracking. Features include workout planning, progress tracking, and social sharing. The app integrates with Apple Health and Google Fit.",
+        status: "In Progress",
+        revenue: "$8,500"
+      },
+      {
+        id: 3,
+        title: "Creative Portfolio",
+        description: "High-fidelity interactive portfolio prototype",
+        technologies: ["Figma", "GSAP", "HTML/CSS", "JavaScript"],
+        client: "DesignHub Studio",
+        image: "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1467232004584-a241de8bcf5d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1545235617-9465d2a55698?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+        ],
+        details: "A high-fidelity interactive portfolio prototype showcasing advanced animations and modern design principles. Features smooth transitions, micro-interactions, and responsive layouts. Built with GSAP animations and modern CSS techniques.",
+        status: "Completed",
+        revenue: "$5,200"
+      },
+      // NEW PROJECTS ADDED
+      {
+        id: 4,
+        title: "E-Commerce Platform",
+        description: "Full-featured online shopping experience",
+        technologies: ["React", "Node.js", "MongoDB", "Stripe", "Redis"],
+        client: "ShopEasy Retail",
+        image: "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1555529669-e69e7aa0ba9a?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+        ],
+        details: "Comprehensive e-commerce solution handling 10,000+ daily transactions. Features include AI-powered recommendations, real-time inventory, secure payment processing with Stripe integration, and advanced analytics dashboard. Built with microservices architecture for scalability.",
+        status: "Active",
+        revenue: "$32,000"
+      },
+      {
+        id: 5,
+        title: "AI Content Generator",
+        description: "AI-powered content creation platform",
+        technologies: ["Python", "TensorFlow", "React", "FastAPI", "PostgreSQL"],
+        client: "ContentGen AI",
+        image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1677442136019-21780ecad995?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1677442135821-5b5a96f7f5a1?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+        ],
+        details: "Advanced AI-powered content generation platform using GPT-4 and custom ML models. Features include blog generation, social media content creation, SEO optimization, and plagiarism checking. The platform serves 5,000+ monthly active users with 99.9% uptime.",
+        status: "In Progress",
+        revenue: "$45,000"
+      },
+      {
+        id: 6,
+        title: "Smart Home Dashboard",
+        description: "IoT home automation control system",
+        technologies: ["React", "MQTT", "Node.js", "WebSocket", "Raspberry Pi"],
+        client: "SmartHome Solutions",
+        image: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        images: [
+          "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+          "https://images.unsplash.com/photo-1581094794329-c8112a89af12?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"
+        ],
+        details: "Comprehensive IoT home automation dashboard controlling smart lights, thermostats, security cameras, and appliances. Features real-time monitoring, energy usage analytics, voice control integration (Alexa/Google Assistant), and automated routines. Supports 100+ IoT device brands.",
+        status: "Completed",
+        revenue: "$28,500"
+      }
+    ];
+
+    let clientsData = [
+      {
+        id: 1,
+        name: "Alex Johnson",
+        company: "TechCorp Inc.",
+        email: "alex@techcorp.com",
+        phone: "+1 (555) 123-4567",
+        avatar: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+        images: ["https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"],
+        projects: ["TaskFlow Pro", "Analytics Dashboard"],
+        description: "CTO at TechCorp Inc., leading enterprise software company focusing on AI solutions for business optimization. Specializes in SaaS products for the tech industry with over 500 enterprise clients worldwide.",
+        joinDate: "2023-01-15",
+        status: "Active"
+      },
+      {
+        id: 2,
+        name: "Sarah Miller",
+        company: "DesignHub Studio",
+        email: "sarah@designhub.com",
+        phone: "+1 (555) 987-6543",
+        avatar: "https://images.unsplash.com/photo-1551830893-57bc42b1f7c9?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+        images: ["https://images.unsplash.com/photo-1551830893-57bc42b1f7c9?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"],
+        projects: ["Creative Portfolio", "UI Component Library"],
+        description: "Creative Director at DesignHub Studio, a creative agency specializing in UI/UX design and brand identity. Works with startups and established companies to create compelling digital experiences. Award-winning design team with 10+ years of experience.",
+        joinDate: "2023-03-20",
+        status: "Active"
+      },
+      // NEW CLIENTS ADDED
+      {
+        id: 3,
+        name: "Michael Chen",
+        company: "ShopEasy Retail",
+        email: "michael@shopeasy.com",
+        phone: "+1 (555) 234-5678",
+        avatar: "https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+        images: ["https://images.unsplash.com/photo-1563013544-824ae1b704d3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"],
+        projects: ["E-Commerce Platform"],
+        description: "Head of Technology at ShopEasy Retail, leading online retail platform with 2M+ monthly active users. Specializes in fast-fashion and electronics with operations across 15 countries. Focuses on providing seamless shopping experiences through innovative technology.",
+        joinDate: "2023-05-10",
+        status: "Active"
+      },
+      {
+        id: 4,
+        name: "Dr. Emma Wilson",
+        company: "ContentGen AI",
+        email: "emma@contentgen.ai",
+        phone: "+1 (555) 345-6789",
+        avatar: "https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+        images: ["https://images.unsplash.com/photo-1552664730-d307ca884978?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"],
+        projects: ["AI Content Generator"],
+        description: "CEO at ContentGen AI, pioneering AI startup focused on revolutionizing content creation. Their platform uses cutting-edge machine learning to generate high-quality written content for marketing, education, and entertainment industries.",
+        joinDate: "2023-07-22",
+        status: "Active"
+      },
+      {
+        id: 5,
+        name: "Robert Davis",
+        company: "SmartHome Solutions",
+        email: "robert@smarthome.com",
+        phone: "+1 (555) 456-7890",
+        avatar: "https://images.unsplash.com/photo-1560179707-f14e90ef3623?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+        images: ["https://images.unsplash.com/photo-1560179707-f14e90ef3623?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"],
+        projects: ["Smart Home Dashboard"],
+        description: "Founder & CEO of SmartHome Solutions, IoT company specializing in smart home automation systems. Develops hardware and software solutions for residential and commercial properties, with focus on energy efficiency and security.",
+        joinDate: "2023-04-18",
+        status: "Active"
+      },
+      {
+        id: 6,
+        name: "Dr. Lisa Parker",
+        company: "HealthFirst Ltd.",
+        email: "lisa@healthfirst.com",
+        phone: "+1 (555) 567-8901",
+        avatar: "https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+        images: ["https://images.unsplash.com/photo-1612349317150-e413f6a5b16d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80"],
+        projects: ["FitTrack Pro"],
+        description: "Medical Director at HealthFirst Ltd., healthcare technology company focused on digital wellness solutions. Partners with hospitals, clinics, and fitness centers to provide integrated health monitoring and management platforms.",
+        joinDate: "2023-02-28",
+        status: "Active"
+      }
+    ];
+
+    const portfolioData = [
+      {
+        id: 1,
+        img: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        title: "E-Commerce UI",
+        desc: "React • Node",
+        category: "web"
+      },
+      {
+        id: 2,
+        img: "https://images.unsplash.com/photo-1551288049-bebda4e38f71?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        title: "Admin Dashboard",
+        desc: "ApexCharts",
+        category: "web"
+      },
+      {
+        id: 3,
+        img: "https://images.unsplash.com/photo-1512941937669-90a1b58e7e9c?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        title: "Mobile App",
+        desc: "React Native",
+        category: "mobile"
+      },
+      {
+        id: 4,
+        img: "https://images.unsplash.com/photo-1558618666-fcd25c85cd64?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        title: "IoT Dashboard",
+        desc: "React • MQTT",
+        category: "web"
+      },
+      {
+        id: 5,
+        img: "https://images.unsplash.com/photo-1551650975-87deedd944c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        title: "Finance App",
+        desc: "Vue.js • Firebase",
+        category: "web"
+      },
+      {
+        id: 6,
+        img: "https://images.unsplash.com/photo-1545235617-9465d2a55698?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80",
+        title: "UI Design System",
+        desc: "Figma • Design",
+        category: "design"
+      }
+    ];
+
+    // Calendar Events Data
+    let calendarEvents = [
+      {
+        id: '1',
+        title: 'Sprint Planning',
+        start: new Date().toISOString().slice(0,10),
+        color: '#6f4ef8',
+        description: 'Weekly sprint planning meeting with the development team to discuss upcoming tasks and priorities.',
+        type: 'meeting'
+      },
+      {
+        id: '2',
+        title: 'Client Meeting',
+        start: new Date(new Date().setDate(new Date().getDate()+3)).toISOString().slice(0,10),
+        color: '#06b6d4',
+        description: 'Meeting with TechCorp Inc. to discuss project requirements and timeline.',
+        type: 'meeting'
+      },
+      {
+        id: '3',
+        title: 'Release v1.2',
+        start: new Date(new Date().setDate(new Date().getDate()+7)).toISOString().slice(0,10),
+        color: '#10b981',
+        description: 'Scheduled release of version 1.2 with new features and bug fixes.',
+        type: 'deadline'
+      },
+      {
+        id: '4',
+        title: 'Design Review',
+        start: new Date(new Date().setDate(new Date().getDate()+5)).toISOString().slice(0,10),
+        color: '#f97316',
+        description: 'Review of new UI/UX designs with the design team and stakeholders.',
+        type: 'meeting'
+      },
+      {
+        id: '5',
+        title: 'Project Deadline',
+        start: new Date(new Date().setDate(new Date().getDate()+10)).toISOString().slice(0,10),
+        color: '#ef4444',
+        description: 'Final deadline for the E-commerce platform project.',
+        type: 'deadline'
+      }
+    ];
+
+    // Settings Data
+    let settingsData = {
+      theme: 'default',
+      sidebarColor: '#2a155e',
+      emailNotifications: true,
+      pushNotifications: true,
+      refreshInterval: 5,
+      defaultView: 'overview',
+      twoFactorAuth: false
+    };
+
+    // =============== Initialization ===============
+    document.addEventListener('DOMContentLoaded', function() {
+      // Set current year
+      document.getElementById('year').textContent = new Date().getFullYear();
+      
+      // Initialize dashboard
+      initializeDashboard();
+      loadProjects();
+      loadClients();
+      loadPortfolio();
+      initializeCharts();
+      initializeCalendar();
+      setupEventListeners();
+      setupAnimations();
+      loadSettings();
+    });
+
+    // =============== Settings Functions ===============
+    function loadSettings() {
+      // Load saved settings from localStorage or use defaults
+      const savedSettings = localStorage.getItem('dashboardSettings');
+      if (savedSettings) {
+        settingsData = JSON.parse(savedSettings);
+      }
+      
+      // Apply settings
+      applySettings();
+      
+      // Update settings UI
+      updateSettingsUI();
+    }
+
+    function saveSettings() {
+      localStorage.setItem('dashboardSettings', JSON.stringify(settingsData));
+      showToast('Settings saved successfully!', 'success');
+    }
+
+    function applySettings() {
+      // Apply theme
+      changeTheme(settingsData.theme, false);
+      
+      // Apply sidebar color
+      changeSidebarColor(settingsData.sidebarColor, false);
+      
+      // Apply refresh interval
+      setupDataRefresh();
+      
+      // Update UI elements
+      document.getElementById('emailNotifications').checked = settingsData.emailNotifications;
+      document.getElementById('pushNotifications').checked = settingsData.pushNotifications;
+      document.getElementById('refreshInterval').value = settingsData.refreshInterval;
+      document.getElementById('defaultView').value = settingsData.defaultView;
+      document.getElementById('twoFactorAuth').checked = settingsData.twoFactorAuth;
+    }
+
+    function updateSettingsUI() {
+      // Update theme previews
+      document.querySelectorAll('.theme-preview').forEach(preview => {
+        preview.classList.remove('active');
+        if (preview.getAttribute('data-theme') === settingsData.theme) {
+          preview.classList.add('active');
+        }
+      });
+      
+      // Update sidebar colors
+      document.querySelectorAll('#sidebarColors .color-picker').forEach(picker => {
+        picker.classList.remove('active');
+        if (picker.getAttribute('data-color') === settingsData.sidebarColor) {
+          picker.classList.add('active');
+        }
+      });
+    }
+
+    function changeTheme(theme, save = true) {
+      settingsData.theme = theme;
+      
+      // Remove existing theme classes
+      document.body.classList.remove('theme-dark', 'theme-light');
+      
+      // Apply new theme
+      if (theme === 'dark') {
+        document.body.classList.add('theme-dark');
+        document.documentElement.style.setProperty('--sidebar-bg', '#1a1a2e');
+        document.documentElement.style.setProperty('--page-bg', '#16213e');
+        document.documentElement.style.setProperty('--card-bg', '#0f172a');
+        document.documentElement.style.setProperty('--text', '#f8fafc');
+        document.documentElement.style.setProperty('--muted', '#94a3b8');
+      } else if (theme === 'light') {
+        document.body.classList.add('theme-light');
+        document.documentElement.style.setProperty('--sidebar-bg', '#4361ee');
+        document.documentElement.style.setProperty('--page-bg', '#f8f9fa');
+        document.documentElement.style.setProperty('--card-bg', '#ffffff');
+        document.documentElement.style.setProperty('--text', '#212529');
+        document.documentElement.style.setProperty('--muted', '#6c757d');
+      } else {
+        // Default theme
+        document.documentElement.style.setProperty('--sidebar-bg', '#2a155e');
+        document.documentElement.style.setProperty('--page-bg', '#f5f8ff');
+        document.documentElement.style.setProperty('--card-bg', '#ffffff');
+        document.documentElement.style.setProperty('--text', '#0f172a');
+        document.documentElement.style.setProperty('--muted', '#6b7280');
+      }
+      
+      // Update UI
+      updateSettingsUI();
+      
+      if (save) {
+        saveSettings();
+      }
+    }
+
+    function changeSidebarColor(color, save = true) {
+      settingsData.sidebarColor = color;
+      document.documentElement.style.setProperty('--sidebar-bg', color);
+      
+      // Update UI
+      updateSettingsUI();
+      
+      if (save) {
+        saveSettings();
+      }
+    }
+
+    function setupDataRefresh() {
+      // Clear existing interval
+      if (window.dataRefreshInterval) {
+        clearInterval(window.dataRefreshInterval);
+      }
+      
+      // Set up new interval
+      const interval = settingsData.refreshInterval * 60 * 1000; // Convert to milliseconds
+      if (interval > 0) {
+        window.dataRefreshInterval = setInterval(() => {
+          // Refresh data here
+          refreshDashboardData();
+        }, interval);
+      }
+    }
+
+    function refreshDashboardData() {
+      // Refresh chart data
+      updateCharts(parseInt(document.getElementById('rangeSelect').value) || 30);
+      
+      // Update counts with slight random variation for demo
+      const projectsCount = document.getElementById('projectsCount');
+      const clientsCount = document.getElementById('clientsCount');
+      const commitsCount = document.getElementById('commitsCount');
+      const revenue = document.getElementById('revenue');
+      
+      if (projectsCount) {
+        const current = parseInt(projectsCount.textContent);
+        projectsCount.textContent = current + (Math.random() > 0.7 ? 1 : 0);
+      }
+      
+      if (clientsCount) {
+        const current = parseInt(clientsCount.textContent);
+        clientsCount.textContent = current + (Math.random() > 0.8 ? 1 : 0);
+      }
+      
+      if (commitsCount) {
+        const current = parseInt(commitsCount.textContent);
+        commitsCount.textContent = current + Math.floor(Math.random() * 10);
+      }
+      
+      if (revenue) {
+        const current = parseInt(revenue.textContent.replace('$', '').replace('k', '000'));
+        revenue.textContent = '$' + (current + Math.floor(Math.random() * 1000)).toLocaleString();
+      }
+      
+      showToast('Dashboard data refreshed', 'info');
+    }
+
+    // Settings Actions
+    function editProfile() {
+      document.getElementById('profileModal').classList.add('show');
+      document.getElementById('profileModal').style.display = 'flex';
+    }
+
+    function closeProfileModal() {
+      document.getElementById('profileModal').classList.remove('show');
+      document.getElementById('profileModal').style.display = 'none';
+    }
+
+    function changePassword() {
+      const newPassword = prompt('Enter new password:');
+      if (newPassword && newPassword.length >= 6) {
+        showToast('Password changed successfully!', 'success');
+      } else if (newPassword) {
+        showToast('Password must be at least 6 characters', 'error');
+      }
+    }
+
+    function emailPreferences() {
+      showToast('Email preferences opened', 'info');
+    }
+
+    function exportData() {
+      const data = {
+        projects: projectsData,
+        clients: clientsData,
+        events: calendarEvents,
+        settings: settingsData,
+        exportDate: new Date().toISOString()
+      };
+      
+      const dataStr = JSON.stringify(data, null, 2);
+      const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+      
+      const exportFileDefaultName = `dashboard-export-${new Date().toISOString().split('T')[0]}.json`;
+      
+      const linkElement = document.createElement('a');
+      linkElement.setAttribute('href', dataUri);
+      linkElement.setAttribute('download', exportFileDefaultName);
+      linkElement.click();
+      
+      showToast('Data exported successfully!', 'success');
+    }
+
+    function importData() {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = '.json';
+      
+      input.onchange = function(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        
+        reader.onload = function(e) {
+          try {
+            const data = JSON.parse(e.target.result);
+            
+            if (confirm('This will replace all current data. Are you sure?')) {
+              if (data.projects) projectsData = data.projects;
+              if (data.clients) clientsData = data.clients;
+              if (data.events) calendarEvents = data.events;
+              if (data.settings) {
+                settingsData = data.settings;
+                applySettings();
+              }
+              
+              loadProjects();
+              loadClients();
+              if (window.calendar) {
+                window.calendar.removeAllEvents();
+                window.calendar.addEventSource(calendarEvents);
+              }
+              
+              showToast('Data imported successfully!', 'success');
+            }
+          } catch (error) {
+            showToast('Error importing data: Invalid file format', 'error');
+          }
+        };
+        
+        reader.readAsText(file);
+      };
+      
+      input.click();
+    }
+
+    function clearCache() {
+      localStorage.removeItem('dashboardSettings');
+      showToast('Cache cleared successfully!', 'success');
+      // Reload with default settings
+      setTimeout(() => location.reload(), 1000);
+    }
+
+    function deleteAccount() {
+      if (confirm('Are you sure you want to delete your account? This action cannot be undone.')) {
+        showToast('Account deletion initiated. This feature is for demo purposes.', 'info');
+      }
+    }
+
+    function resetAllData() {
+      if (confirm('This will reset all data to default values. Are you sure?')) {
+        // Reset to initial data
+        projectsData = projectsData.slice(0, 3);
+        clientsData = clientsData.slice(0, 2);
+        calendarEvents = calendarEvents.slice(0, 4);
+        settingsData = {
+          theme: 'default',
+          sidebarColor: '#2a155e',
+          emailNotifications: true,
+          pushNotifications: true,
+          refreshInterval: 5,
+          defaultView: 'overview',
+          twoFactorAuth: false
+        };
+        
+        loadProjects();
+        loadClients();
+        if (window.calendar) {
+          window.calendar.removeAllEvents();
+          window.calendar.addEventSource(calendarEvents);
+        }
+        applySettings();
+        
+        showToast('All data reset to default!', 'success');
+      }
+    }
+
+    // Settings Form Submissions
+    document.getElementById('emailNotifications').addEventListener('change', function() {
+      settingsData.emailNotifications = this.checked;
+      saveSettings();
+    });
+    
+    document.getElementById('pushNotifications').addEventListener('change', function() {
+      settingsData.pushNotifications = this.checked;
+      saveSettings();
+    });
+    
+    document.getElementById('refreshInterval').addEventListener('change', function() {
+      settingsData.refreshInterval = parseInt(this.value);
+      saveSettings();
+      setupDataRefresh();
+    });
+    
+    document.getElementById('defaultView').addEventListener('change', function() {
+      settingsData.defaultView = this.value;
+      saveSettings();
+    });
+    
+    document.getElementById('twoFactorAuth').addEventListener('change', function() {
+      settingsData.twoFactorAuth = this.checked;
+      saveSettings();
+    });
+    
+    document.getElementById('profileForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      showToast('Profile updated successfully!', 'success');
+      closeProfileModal();
+    });
+
+    // =============== Project Management Functions ===============
+    function loadProjects() {
+      const container = document.getElementById('projectsContainer');
+      const noProjectsMessage = document.getElementById('noProjectsMessage');
+      
+      if (!container) return;
+      
+      container.innerHTML = '';
+
+      if (projectsData.length === 0) {
+        noProjectsMessage.style.display = 'block';
+        return;
+      }
+      
+      noProjectsMessage.style.display = 'none';
+
+      projectsData.forEach(project => {
+        const projectCard = document.createElement('div');
+        projectCard.className = 'project-card';
+        projectCard.setAttribute('data-status', project.status.toLowerCase().replace(' ', '-'));
+        projectCard.onclick = () => showProjectModal(project.id);
+
+        projectCard.innerHTML = `
+          <img src="${project.image}" class="project-image" alt="${project.title}">
+          <div class="project-content">
+            <h6 style="margin: 0;">${project.title}</h6>
+            <p style="margin: 8px 0; color: var(--muted); font-size: 14px;">${project.description}</p>
+            <div class="project-tech">
+              ${project.technologies.slice(0, 3).map(tech => `<span class="tech-tag">${tech}</span>`).join('')}
+              ${project.technologies.length > 3 ? `<span class="tech-tag">+${project.technologies.length - 3} more</span>` : ''}
+            </div>
+            <div style="margin-top: 15px; display: flex; justify-content: space-between; align-items: center;">
+              <span class="status-badge ${getStatusClass(project.status)}">${project.status}</span>
+              ${project.revenue ? `<small style="color: var(--accent-4); font-weight: 600;">${project.revenue}</small>` : ''}
+            </div>
+          </div>
+          <div class="edit-options">
+            <button class="edit-btn" onclick="event.stopPropagation(); editProject(${project.id})">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="delete-btn" onclick="event.stopPropagation(); deleteProject(${project.id})">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `;
+
+        container.appendChild(projectCard);
+      });
+
+      // Update overview count
+      updateProjectCount();
+    }
+
+    function showProjectModal(projectId) {
+      const project = projectsData.find(p => p.id === projectId);
+      if (!project) return;
+
+      const modal = document.getElementById('projectModal');
+      const title = document.getElementById('modalProjectTitle');
+      const images = document.getElementById('modalProjectImages');
+      const content = document.getElementById('modalProjectContent');
+
+      title.textContent = project.title;
+
+      // Set images
+      images.innerHTML = project.images.map(img => `
+        <div class="modal-img">
+          <img src="${img}" alt="${project.title}" loading="lazy">
+        </div>
+      `).join('');
+
+      // Set content
+      content.innerHTML = `
+        <div class="mb-4">
+          <h5>Project Overview</h5>
+          <p>${project.details || project.description}</p>
+        </div>
+
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <h6>Client</h6>
+            <p>${project.client || 'Not specified'}</p>
+          </div>
+          <div class="col-md-6">
+            <h6>Status</h6>
+            <span class="status-badge ${getStatusClass(project.status)}">${project.status}</span>
+          </div>
+          ${project.revenue ? `
+          <div class="col-md-6">
+            <h6>Revenue</h6>
+            <p class="text-success fw-bold">${project.revenue}</p>
+          </div>
+          ` : ''}
+          <div class="col-md-6">
+            <h6>Project ID</h6>
+            <p class="text-muted">#${project.id}</p>
+          </div>
+        </div>
+
+        <h6>Technologies Used</h6>
+        <div class="project-tech mb-4">
+          ${project.technologies.map(tech => `<span class="tech-tag">${tech}</span>`).join('')}
+        </div>
+
+        <div class="d-flex gap-3 mt-4">
+          <button class="btn btn-primary" onclick="editProject(${project.id})">
+            <i class="fa-solid fa-edit"></i> Edit Project
+          </button>
+          <button class="btn btn-outline-danger" onclick="deleteProject(${project.id})">
+            <i class="fa-solid fa-trash"></i> Delete
+          </button>
+          <button class="btn btn-outline-secondary" onclick="closeModal()">
+            <i class="fa-solid fa-times"></i> Close
+          </button>
+        </div>
+      `;
+
+      modal.classList.add('show');
+      modal.style.display = 'flex';
+    }
+
+    function getStatusClass(status) {
+      switch(status.toLowerCase()) {
+        case 'completed': return 'status-completed';
+        case 'in progress': return 'status-in-progress';
+        case 'planning': return 'status-planning';
+        case 'on hold': return 'status-on-hold';
+        case 'active': return 'status-active';
+        default: return 'status-completed';
+      }
+    }
+
+    function updateProjectCount() {
+      const overviewCount = document.getElementById('projectsCount');
+      if (overviewCount) {
+        overviewCount.textContent = projectsData.length;
+        // Animate number
+        gsap.to(overviewCount, {
+          innerText: projectsData.length,
+          duration: 1,
+          snap: { innerText: 1 }
+        });
+      }
+    }
+
+    function searchProjects() {
+      const searchTerm = document.getElementById('projectSearch').value.toLowerCase();
+      const projectCards = document.querySelectorAll('.project-card');
+      let visibleCount = 0;
+
+      projectCards.forEach(card => {
+        const title = card.querySelector('h6').textContent.toLowerCase();
+        const description = card.querySelector('p').textContent.toLowerCase();
+        const technologies = card.querySelector('.project-tech').textContent.toLowerCase();
+        
+        if (title.includes(searchTerm) || description.includes(searchTerm) || technologies.includes(searchTerm)) {
+          card.style.display = 'block';
+          visibleCount++;
+        } else {
+          card.style.display = 'none';
+        }
+      });
+
+      // Show/hide no projects message
+      const noProjectsMessage = document.getElementById('noProjectsMessage');
+      if (visibleCount === 0 && searchTerm !== '') {
+        noProjectsMessage.innerHTML = `
+          <i class="fa-solid fa-search" style="font-size:48px; margin-bottom:16px"></i>
+          <h5>No projects found</h5>
+          <p>No projects match your search for "${searchTerm}"</p>
+          <button class="btn btn-sm btn-outline-secondary" onclick="clearProjectSearch()">Clear Search</button>
+        `;
+        noProjectsMessage.style.display = 'block';
+      } else if (visibleCount === 0) {
+        noProjectsMessage.style.display = 'block';
+      } else {
+        noProjectsMessage.style.display = 'none';
+      }
+    }
+
+    function filterProjects(filter) {
+      const projectCards = document.querySelectorAll('.project-card');
+      const filterButtons = document.querySelectorAll('#projectsPage .filter-btn');
+      
+      // Update active button
+      filterButtons.forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent.toLowerCase().includes(filter)) {
+          btn.classList.add('active');
+        }
+      });
+
+      projectCards.forEach(card => {
+        const status = card.getAttribute('data-status');
+        
+        if (filter === 'all' || status === filter) {
+          card.style.display = 'block';
+          gsap.fromTo(card, 
+            { opacity: 0, y: 20 }, 
+            { opacity: 1, y: 0, duration: 0.3 }
+          );
+        } else {
+          card.style.display = 'none';
+        }
+      });
+    }
+
+    function clearProjectSearch() {
+      document.getElementById('projectSearch').value = '';
+      searchProjects();
+    }
+
+    // =============== Client Management Functions ===============
+    function loadClients() {
+      const container = document.getElementById('clientsContainer');
+      if (!container) return;
+      
+      container.innerHTML = '';
+
+      clientsData.forEach(client => {
+        const clientCard = document.createElement('div');
+        clientCard.className = 'client-card';
+        clientCard.onclick = () => showClientModal(client.id);
+
+        clientCard.innerHTML = `
+          <img src="${client.avatar}" class="client-avatar" alt="${client.name}">
+          <div style="flex: 1;">
+            <h6 style="margin: 0;">${client.name}</h6>
+            <p style="margin: 5px 0; color: var(--muted); font-size: 14px;">${client.company}</p>
+            <p style="margin: 5px 0; color: var(--muted); font-size: 12px;">${client.email}</p>
+            <div class="project-tech" style="margin-top: 8px;">
+              ${client.projects.map(project => `<span class="tech-tag">${project}</span>`).join('')}
+            </div>
+          </div>
+          <span class="badge ${client.status === 'Active' ? 'bg-success' : 'bg-secondary'}">${client.status}</span>
+          <div class="edit-options">
+            <button class="edit-btn" onclick="event.stopPropagation(); editClient(${client.id})">
+              <i class="fas fa-edit"></i>
+            </button>
+            <button class="delete-btn" onclick="event.stopPropagation(); deleteClient(${client.id})">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        `;
+
+        container.appendChild(clientCard);
+      });
+
+      // Update overview count
+      updateClientCount();
+    }
+
+    function showClientModal(clientId) {
+      const client = clientsData.find(c => c.id === clientId);
+      if (!client) return;
+
+      const modal = document.getElementById('clientModal');
+      const title = document.getElementById('modalClientTitle');
+      const images = document.getElementById('modalClientImages');
+      const content = document.getElementById('modalClientContent');
+
+      title.textContent = `${client.name}`;
+
+      // Set images
+      images.innerHTML = `
+        <div class="modal-img">
+          <img src="${client.images[0]}" alt="${client.name}" style="border-radius: 50%; width: 200px; height: 200px; object-fit: cover; margin: 0 auto; display: block;">
+        </div>
+      `;
+
+      // Set content
+      content.innerHTML = `
+        <div class="mb-4">
+          <h5>Client Information</h5>
+          <p>${client.description}</p>
+        </div>
+
+        <div class="row mb-4">
+          <div class="col-md-6">
+            <h6>Contact Details</h6>
+            <p><i class="fa-solid fa-envelope me-2"></i> ${client.email}</p>
+            <p><i class="fa-solid fa-phone me-2"></i> ${client.phone || 'Not specified'}</p>
+            <p><i class="fa-solid fa-building me-2"></i> ${client.company}</p>
+          </div>
+          <div class="col-md-6">
+            <h6>Client Since</h6>
+            <p>${new Date(client.joinDate).toLocaleDateString('en-US', { 
+              year: 'numeric', 
+              month: 'long', 
+              day: 'numeric' 
+            })}</p>
+            <h6>Status</h6>
+            <span class="badge ${client.status === 'Active' ? 'bg-success' : 'bg-secondary'}">${client.status}</span>
+            <h6 class="mt-3">Projects</h6>
+            <p>${client.projects.length} project(s)</p>
+          </div>
+        </div>
+
+        <h6>Projects with this Client</h6>
+        <div class="project-tech mb-4">
+          ${client.projects.map(project => `<span class="tech-tag">${project}</span>`).join('')}
+        </div>
+
+        <div class="d-flex gap-3 mt-4">
+          <button class="btn btn-primary" onclick="editClient(${client.id})">
+            <i class="fa-solid fa-edit"></i> Edit Client
+          </button>
+          <button class="btn btn-outline-danger" onclick="deleteClient(${client.id})">
+            <i class="fa-solid fa-trash"></i> Delete
+          </button>
+          <button class="btn btn-outline-secondary" onclick="closeModal()">
+            <i class="fa-solid fa-times"></i> Close
+          </button>
+        </div>
+      `;
+
+      modal.classList.add('show');
+      modal.style.display = 'flex';
+    }
+
+    function updateClientCount() {
+      const overviewCount = document.getElementById('clientsCount');
+      if (overviewCount) {
+        overviewCount.textContent = clientsData.length;
+        // Animate number
+        gsap.to(overviewCount, {
+          innerText: clientsData.length,
+          duration: 1,
+          snap: { innerText: 1 }
+        });
+      }
+    }
+
+    // =============== Portfolio Management Functions ===============
+    function loadPortfolio() {
+      const container = document.getElementById('portfolioContainer');
+      if (!container) return;
+      
+      container.innerHTML = '';
+
+      portfolioData.forEach(item => {
+        const portfolioCard = document.createElement('div');
+        portfolioCard.className = 'portfolio-card';
+        portfolioCard.setAttribute('data-category', item.category);
+        
+        portfolioCard.innerHTML = `
+          <img src="${item.img}" alt="${item.title}">
+          <div class="portfolio-overlay">
+            <div>
+              <strong>${item.title}</strong>
+              <div class="muted small" style="color: rgba(255,255,255,0.8);">${item.desc}</div>
+            </div>
+          </div>
+        `;
+        
+        portfolioCard.addEventListener('click', () => {
+          showPortfolioModal(item);
+        });
+        
+        container.appendChild(portfolioCard);
+      });
+    }
+
+    function showPortfolioModal(item) {
+      const modal = document.getElementById('projectModal');
+      const title = document.getElementById('modalProjectTitle');
+      const images = document.getElementById('modalProjectImages');
+      const content = document.getElementById('modalProjectContent');
+      
+      title.textContent = item.title;
+      
+      images.innerHTML = `
+        <div class="modal-img">
+          <img src="${item.img}" alt="${item.title}">
+        </div>
+      `;
+      
+      content.innerHTML = `
+        <div class="mb-4">
+          <h5>${item.title}</h5>
+          <p>${item.desc}</p>
+          <p>Category: <span class="badge bg-primary">${item.category}</span></p>
+        </div>
+        
+        <div class="d-flex gap-3 mt-4">
+          <button class="btn btn-primary">
+            <i class="fa-solid fa-external-link-alt"></i> View Live
+          </button>
+          <button class="btn btn-outline-secondary">
+            <i class="fab fa-github"></i> View Code
+          </button>
+          <button class="btn btn-outline-secondary" onclick="closeModal()">
+            <i class="fa-solid fa-times"></i> Close
+          </button>
+        </div>
+      `;
+      
+      modal.classList.add('show');
+      modal.style.display = 'flex';
+    }
+
+    function filterPortfolioItems(filter) {
+      const items = document.querySelectorAll('.portfolio-card');
+      const filterButtons = document.querySelectorAll('#portfolioPage .filter-btn');
+      
+      // Update active button
+      filterButtons.forEach(btn => btn.classList.remove('active'));
+      event.target.classList.add('active');
+
+      items.forEach(item => {
+        if (filter === 'all' || item.getAttribute('data-category') === filter) {
+          item.style.display = 'block';
+          gsap.fromTo(item, 
+            { opacity: 0, y: 20 }, 
+            { opacity: 1, y: 0, duration: 0.3 }
+          );
+        } else {
+          item.style.display = 'none';
+        }
+      });
+    }
+
+    // =============== Calendar Functions ===============
+    function initializeCalendar() {
+      const calendarEl = document.getElementById('calendar');
+      if (!calendarEl) return;
+      
+      const calendar = new FullCalendar.Calendar(calendarEl, {
+        initialView: 'dayGridMonth',
+        height: 580,
+        headerToolbar: { 
+          left: 'prev,next today', 
+          center: 'title', 
+          right: 'dayGridMonth,timeGridWeek,timeGridDay' 
+        },
+        editable: true,
+        selectable: true,
+        selectMirror: true,
+        dayMaxEvents: true,
+        events: calendarEvents,
+        select: function(info) {
+          // When a date is selected, open add event modal with that date
+          showAddEventModal(info.startStr, info.endStr);
+        },
+        eventClick: function(info) {
+          info.jsEvent.preventDefault();
+          document.getElementById('eventTitle').textContent = info.event.title;
+          document.getElementById('eventDescription').textContent = info.event.extendedProps.description || 'No description available.';
+          document.getElementById('eventDate').textContent = info.event.start.toLocaleDateString();
+          document.getElementById('eventDetails').style.display = 'block';
+        },
+        dateClick: function(info) {
+          // Click on date to add event
+          showAddEventModal(info.dateStr);
+        }
+      });
+      
+      if (sections.calendarPage.classList.contains('active')) {
+        calendar.render();
+      }
+      window.calendar = calendar;
+    }
+
+    function showAddEventModal(startDate = '', endDate = '') {
+      const modal = document.getElementById('addEventModal');
+      const startInput = document.getElementById('eventStart');
+      const endInput = document.getElementById('eventEnd');
+      
+      // Set default dates if provided
+      if (startDate) {
+        const startDateTime = new Date(startDate);
+        const endDateTime = endDate ? new Date(endDate) : new Date(startDateTime.getTime() + 60 * 60 * 1000); // +1 hour
+        
+        // Format for datetime-local input
+        startInput.value = startDateTime.toISOString().slice(0, 16);
+        endInput.value = endDateTime.toISOString().slice(0, 16);
+      } else {
+        // Default to now
+        const now = new Date();
+        const oneHourLater = new Date(now.getTime() + 60 * 60 * 1000);
+        
+        startInput.value = now.toISOString().slice(0, 16);
+        endInput.value = oneHourLater.toISOString().slice(0, 16);
+      }
+      
+      modal.classList.add('show');
+      modal.style.display = 'flex';
+    }
+
+    function closeAddEventModal() {
+      document.getElementById('addEventModal').classList.remove('show');
+      document.getElementById('addEventModal').style.display = 'none';
+      document.getElementById('newEventForm').reset();
+    }
+
+    function selectEventColor(color) {
+      document.getElementById('eventColor').value = color;
+      document.querySelectorAll('#addEventModal .color-picker').forEach(picker => {
+        picker.classList.remove('active');
+        if (picker.getAttribute('data-color') === color) {
+          picker.classList.add('active');
+        }
+      });
+    }
+
+    // Event Form Submission
+    document.getElementById('newEventForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const title = document.getElementById('eventTitle').value;
+      const description = document.getElementById('eventDescription').value;
+      const start = document.getElementById('eventStart').value;
+      const end = document.getElementById('eventEnd').value;
+      const color = document.getElementById('eventColor').value;
+      const type = document.getElementById('eventType').value;
+      const allDay = document.getElementById('allDayEvent').checked;
+      
+      const newEvent = {
+        id: 'event-' + Date.now(),
+        title: title,
+        start: start,
+        end: end,
+        color: color,
+        description: description,
+        type: type,
+        allDay: allDay
+      };
+      
+      // Add to calendar
+      if (window.calendar) {
+        window.calendar.addEvent(newEvent);
+      }
+      
+      // Add to local data
+      calendarEvents.push(newEvent);
+      
+      closeAddEventModal();
+      showToast('Event added successfully!', 'success');
+      
+      // Hide event details if open
+      document.getElementById('eventDetails').style.display = 'none';
+    });
+
+    // =============== Modal Functions ===============
+    // Project Modals
+    function showAddProjectModal() {
+      document.getElementById('addProjectModal').classList.add('show');
+      document.getElementById('addProjectModal').style.display = 'flex';
+    }
+
+    function closeAddProjectModal() {
+      document.getElementById('addProjectModal').classList.remove('show');
+      document.getElementById('addProjectModal').style.display = 'none';
+      document.getElementById('newProjectForm').reset();
+    }
+
+    function editProject(projectId) {
+      const project = projectsData.find(p => p.id === projectId);
+      if (!project) return;
+
+      // Fill edit form
+      document.getElementById('editProjectId').value = project.id;
+      document.getElementById('editProjectTitle').value = project.title;
+      document.getElementById('editProjectDescription').value = project.description;
+      document.getElementById('editProjectTechnologies').value = project.technologies.join(', ');
+      document.getElementById('editProjectImage').value = project.image;
+      document.getElementById('editProjectClient').value = project.client || '';
+      document.getElementById('editProjectStatus').value = project.status;
+      document.getElementById('editProjectRevenue').value = project.revenue ? project.revenue.replace('$', '').replace(',', '') : '';
+      document.getElementById('editProjectDetails').value = project.details || '';
+
+      // Show edit modal
+      closeModal();
+      document.getElementById('editProjectModal').classList.add('show');
+      document.getElementById('editProjectModal').style.display = 'flex';
+    }
+
+    function closeEditProjectModal() {
+      document.getElementById('editProjectModal').classList.remove('show');
+      document.getElementById('editProjectModal').style.display = 'none';
+      document.getElementById('editProjectForm').reset();
+    }
+
+    // Client Modals
+    function showAddClientModal() {
+      document.getElementById('addClientModal').classList.add('show');
+      document.getElementById('addClientModal').style.display = 'flex';
+    }
+
+    function closeAddClientModal() {
+      document.getElementById('addClientModal').classList.remove('show');
+      document.getElementById('addClientModal').style.display = 'none';
+      document.getElementById('newClientForm').reset();
+    }
+
+    function editClient(clientId) {
+      const client = clientsData.find(c => c.id === clientId);
+      if (!client) return;
+
+      // Fill edit form
+      document.getElementById('editClientId').value = client.id;
+      document.getElementById('editClientName').value = client.name;
+      document.getElementById('editClientCompany').value = client.company;
+      document.getElementById('editClientEmail').value = client.email;
+      document.getElementById('editClientPhone').value = client.phone || '';
+      document.getElementById('editClientDescription').value = client.description;
+      document.getElementById('editClientAvatar').value = client.avatar;
+      document.getElementById('editClientStatus').value = client.status;
+
+      // Show edit modal
+      closeModal();
+      document.getElementById('editClientModal').classList.add('show');
+      document.getElementById('editClientModal').style.display = 'flex';
+    }
+
+    function closeEditClientModal() {
+      document.getElementById('editClientModal').classList.remove('show');
+      document.getElementById('editClientModal').style.display = 'none';
+      document.getElementById('editClientForm').reset();
+    }
+
+    // Revenue Modal
+    function openRevenueDetails() {
+      const modal = document.getElementById('revenueDetail');
+      modal.classList.add('show');
+      modal.style.display = 'flex';
+      revenueChart.render();
+    }
+    
+    function closeRevenueDetails() {
+      const modal = document.getElementById('revenueDetail');
+      modal.classList.remove('show');
+      modal.style.display = 'none';
+    }
+
+    // Close all modals
+    function closeModal() {
+      document.querySelectorAll('.overlay-modal').forEach(modal => {
+        modal.classList.remove('show');
+        modal.style.display = 'none';
+      });
+    }
+
+    // =============== CRUD Operations ===============
+    // Delete Functions
+    function deleteProject(projectId) {
+      if (confirm('Are you sure you want to delete this project?')) {
+        projectsData = projectsData.filter(p => p.id !== projectId);
+        loadProjects();
+        closeModal();
+        showToast('Project deleted successfully!', 'success');
+      }
+    }
+
+    function deleteClient(clientId) {
+      if (confirm('Are you sure you want to delete this client?')) {
+        clientsData = clientsData.filter(c => c.id !== clientId);
+        loadClients();
+        closeModal();
+        showToast('Client deleted successfully!', 'success');
+      }
+    }
+
+    // =============== Form Submissions ===============
+    // New Project Form
+    document.getElementById('newProjectForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Generate new ID
+      const newId = projectsData.length > 0 ? Math.max(...projectsData.map(p => p.id)) + 1 : 1;
+      
+      const newProject = {
+        id: newId,
+        title: document.getElementById('projectTitle').value,
+        description: document.getElementById('projectDescription').value,
+        technologies: document.getElementById('projectTechnologies').value.split(',').map(t => t.trim()),
+        client: document.getElementById('projectClient').value || '',
+        image: document.getElementById('projectImage').value || 'https://images.unsplash.com/photo-1551650975-87deedd944c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80',
+        images: [document.getElementById('projectImage').value || 'https://images.unsplash.com/photo-1551650975-87deedd944c3?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+        details: document.getElementById('projectDetails').value || document.getElementById('projectDescription').value,
+        status: document.getElementById('projectStatus').value,
+        revenue: document.getElementById('projectRevenue').value ? '$' + parseInt(document.getElementById('projectRevenue').value).toLocaleString() : ''
+      };
+
+      projectsData.unshift(newProject); // Add to beginning
+      loadProjects();
+      closeAddProjectModal();
+      this.reset();
+      
+      showToast('Project added successfully!', 'success');
+      
+      // Scroll to top of projects
+      if (document.getElementById('projectsPage').classList.contains('active')) {
+        document.querySelector('.main').scrollTop = 0;
+      }
+    });
+
+    // Edit Project Form
+    document.getElementById('editProjectForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const projectId = parseInt(document.getElementById('editProjectId').value);
+      const projectIndex = projectsData.findIndex(p => p.id === projectId);
+      
+      if (projectIndex !== -1) {
+        projectsData[projectIndex] = {
+          ...projectsData[projectIndex],
+          title: document.getElementById('editProjectTitle').value,
+          description: document.getElementById('editProjectDescription').value,
+          technologies: document.getElementById('editProjectTechnologies').value.split(',').map(t => t.trim()),
+          client: document.getElementById('editProjectClient').value,
+          image: document.getElementById('editProjectImage').value,
+          details: document.getElementById('editProjectDetails').value,
+          status: document.getElementById('editProjectStatus').value,
+          revenue: document.getElementById('editProjectRevenue').value ? '$' + parseInt(document.getElementById('editProjectRevenue').value).toLocaleString() : ''
+        };
+        
+        loadProjects();
+        closeEditProjectModal();
+        showToast('Project updated successfully!', 'success');
+      }
+    });
+
+    // New Client Form
+    document.getElementById('newClientForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const newClient = {
+        id: clientsData.length > 0 ? Math.max(...clientsData.map(c => c.id)) + 1 : 1,
+        name: document.getElementById('clientName').value,
+        company: document.getElementById('clientCompany').value,
+        email: document.getElementById('clientEmail').value,
+        phone: document.getElementById('clientPhone').value || '',
+        avatar: document.getElementById('clientAvatar').value || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80',
+        images: [document.getElementById('clientAvatar').value || 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80'],
+        projects: [],
+        description: document.getElementById('clientDescription').value || 'New client description',
+        joinDate: new Date().toISOString().split('T')[0],
+        status: document.getElementById('clientStatus').value
+      };
+
+      clientsData.push(newClient);
+      loadClients();
+      closeAddClientModal();
+      this.reset();
+      
+      showToast('Client added successfully!', 'success');
+    });
+
+    // Edit Client Form
+    document.getElementById('editClientForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      const clientId = parseInt(document.getElementById('editClientId').value);
+      const clientIndex = clientsData.findIndex(c => c.id === clientId);
+      
+      if (clientIndex !== -1) {
+        clientsData[clientIndex] = {
+          ...clientsData[clientIndex],
+          name: document.getElementById('editClientName').value,
+          company: document.getElementById('editClientCompany').value,
+          email: document.getElementById('editClientEmail').value,
+          phone: document.getElementById('editClientPhone').value,
+          description: document.getElementById('editClientDescription').value,
+          avatar: document.getElementById('editClientAvatar').value,
+          status: document.getElementById('editClientStatus').value
+        };
+        
+        loadClients();
+        closeEditClientModal();
+        showToast('Client updated successfully!', 'success');
+      }
+    });
+
+    // Enhanced Contact Form
+    document.getElementById('contactForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      
+      // Get form values
+      const name = document.getElementById('cname').value;
+      const email = document.getElementById('cemail').value;
+      const subject = document.getElementById('csubject').value;
+      const projectType = document.getElementById('cprojectType').value;
+      const message = document.getElementById('cmsg').value;
+      const newsletter = document.getElementById('newsletter').checked;
+      
+      // Here you would typically send the data to a server
+      // For demo purposes, we'll just show a success message
+      
+      showToast(`Thank you ${name}! Your message has been sent. I'll respond within 24 hours.`, 'success');
+      
+      // Reset form
+      this.reset();
+      
+      // Optional: Add animation
+      gsap.fromTo(document.getElementById('contactForm'), 
+        { opacity: 0.8, y: 10 },
+        { opacity: 1, y: 0, duration: 0.5 }
+      );
+    });
+
+    // =============== Setup Functions ===============
+    function setupEventListeners() {
+      // Close modals on outside click
+      window.addEventListener('click', function(event) {
+        if (event.target.classList.contains('overlay-modal')) {
+          closeModal();
+          closeRevenueDetails();
+          closeAddProjectModal();
+          closeAddClientModal();
+          closeEditProjectModal();
+          closeEditClientModal();
+          closeAddEventModal();
+          closeProfileModal();
+        }
+      });
+
+      // Close modal with Escape key
+      document.addEventListener('keydown', function(event) {
+        if (event.key === 'Escape') {
+          closeModal();
+          closeRevenueDetails();
+          closeAddProjectModal();
+          closeAddClientModal();
+          closeEditProjectModal();
+          closeEditClientModal();
+          closeAddEventModal();
+          closeProfileModal();
+        }
+      });
+
+      // Range selector for charts
+      const rangeSelect = document.getElementById('rangeSelect');
+      if (rangeSelect) {
+        rangeSelect.addEventListener('change', function() {
+          updateCharts(parseInt(this.value));
+        });
+      }
+      
+      // Portfolio filter buttons
+      document.querySelectorAll('#portfolioPage .filter-btn').forEach(btn => {
+        btn.addEventListener('click', function() {
+          const filter = this.getAttribute('data-filter');
+          filterPortfolioItems(filter);
+        });
+      });
+    }
+
+    function setupAnimations() {
+      // Animate numbers
+      animateNumber('projectsCount', projectsData.length);
+      animateNumber('clientsCount', clientsData.length);
+      animateNumber('commitsCount', 230);
+      animateNumber('revenue', 12000);
+
+      // GSAP animations for cards
+      gsap.from('.card', { y: 10, opacity: 0, stagger: 0.03, duration: 0.45, ease: 'power3.out' });
+    }
+
+    function animateNumber(elId, to){
+      const el = document.getElementById(elId);
+      if(!el) return;
+      let cur = 0; const step = Math.max(1, Math.round(to/40));
+      const iv = setInterval(()=> {
+        cur += step;
+        if(cur >= to){ cur = to; clearInterval(iv); }
+        if(elId === 'revenue') el.textContent = '$' + cur.toLocaleString();
+        else el.textContent = cur;
+      }, 18);
+    }
+
+    function showToast(message, type = 'info') {
+      // Create toast element
+      const toast = document.createElement('div');
+      toast.className = 'toast';
+      toast.style.background = type === 'success' ? '#10b981' : type === 'error' ? '#ef4444' : '#3b82f6';
+      
+      toast.innerHTML = `
+        <div style="display: flex; align-items: center; gap: 10px;">
+          <i class="fa-solid ${type === 'success' ? 'fa-check-circle' : type === 'error' ? 'fa-exclamation-circle' : 'fa-info-circle'}"></i>
+          <span>${message}</span>
+        </div>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // Remove after 3 seconds
+      setTimeout(() => {
+        toast.style.animation = 'slideOut 0.3s ease';
+        setTimeout(() => {
+          document.body.removeChild(toast);
+        }, 300);
+      }, 3000);
+    }
+
+    // =============== Dashboard Functions ===============
+    // SPA navigation: show/hide sections
+    const sections = {
+      overview: document.getElementById('overview'),
+      projectsPage: document.getElementById('projectsPage'),
+      clientsPage: document.getElementById('clientsPage'),
+      commitsPage: document.getElementById('commitsPage'),
+      calendarPage: document.getElementById('calendarPage'),
+      analyticsPage: document.getElementById('analyticsPage'),
+      portfolioPage: document.getElementById('portfolioPage'),
+      contactPage: document.getElementById('contactPage'),
+      settingsPage: document.getElementById('settingsPage')
+    };
+
+    function hideAllSections() {
+      Object.values(sections).forEach(s => s.classList.remove('active'));
+    }
+
+    function setActiveNav(targetName) {
+      document.querySelectorAll('.nav-link').forEach(n => {
+        n.classList.toggle('active', n.getAttribute('data-target') === targetName);
+      });
+    }
+
+    function showSection(targetName) {
+      if (!sections[targetName]) return;
+      hideAllSections();
+      sections[targetName].classList.add('active');
+      setActiveNav(targetName);
+      
+      // some charts/redraws when showing pages
+      if (targetName === 'calendarPage') {
+        setTimeout(() => { if(window.calendar) window.calendar.render(); }, 80);
+      }
+      if (targetName === 'analyticsPage') {
+        setTimeout(() => { try { areaChartBig.render(); barChartBig.render(); donutBig.render(); projectStatusChart.render(); } catch(e){} }, 80);
+      }
+      if (targetName === 'commitsPage') {
+        setTimeout(() => { try { commitChart.render(); } catch(e){} }, 80);
+      }
+      
+      // small entrance animation
+      gsap.from(sections[targetName], { y: 8, opacity:0, duration: 0.36, ease:'power3.out' });
+      // close mobile sidebar if open
+      if(window.innerWidth < 1100) document.querySelector('.sidebar').style.display = 'none';
+    }
+
+    // bind nav clicks
+    document.querySelectorAll('.nav-link').forEach(link => {
+      link.addEventListener('click', (e) => {
+        const target = e.currentTarget.getAttribute('data-target');
+        showSection(target);
+      });
+    });
+
+    // quick open project from overview
+    function openProjectAndShow(projectId){
+      showSection('projectsPage');
+      setTimeout(() => { showProjectModal(projectId); }, 250);
+    }
+
+    // toggle sidebar (mobile)
+    function toggleSidebarMobile(){
+      const s = document.querySelector('.sidebar');
+      s.style.display = s.style.display === 'none' ? 'block' : 'none';
+    }
+
+    function searchContent() {
+      const searchTerm = document.getElementById('search').value.toLowerCase();
+      if (searchTerm.length < 2) return;
+      
+      // Search in projects
+      const projectResults = projectsData.filter(project => 
+        project.title.toLowerCase().includes(searchTerm) ||
+        project.description.toLowerCase().includes(searchTerm) ||
+        project.technologies.some(tech => tech.toLowerCase().includes(searchTerm))
+      );
+      
+      // Search in clients
+      const clientResults = clientsData.filter(client =>
+        client.name.toLowerCase().includes(searchTerm) ||
+        client.company.toLowerCase().includes(searchTerm)
+      );
+      
+      if (projectResults.length > 0 || clientResults.length > 0) {
+        showSection('projectsPage');
+        // Highlight search results
+        setTimeout(() => {
+          document.getElementById('projectSearch').value = searchTerm;
+          searchProjects();
+        }, 100);
+      }
+    }
+
+    // =============== Chart Functions ===============
+    function initializeCharts() {
+      // Overview Charts
+      initializeOverviewCharts();
+      
+      // Analytics Charts
+      setTimeout(() => {
+        initializeAnalyticsCharts();
+      }, 100);
+      
+      // Commit Chart
+      initializeCommitChart();
+      
+      // Revenue Chart
+      initializeRevenueChart();
+    }
+
+    function initializeOverviewCharts() {
+      // Area Chart
+      const areaOptions = {
+        chart: { 
+          type: 'area', 
+          height: 320, 
+          toolbar: {show:false}, 
+          animations: {enabled:true} 
+        },
+        series: [{ 
+          name: 'Visitors', 
+          data: Array.from({length:30}, (_,i) => 300 + Math.round(Math.sin(i/3)*80 + Math.random()*200)) 
+        }],
+        xaxis: { 
+          categories: Array.from({length:30}, (_,i) => `Day ${i+1}`) 
+        },
+        stroke: { curve: 'smooth', width:2 },
+        fill: { 
+          type:'gradient', 
+          gradient: { 
+            shadeIntensity: 1, 
+            opacityFrom: 0.45, 
+            opacityTo: 0.05 
+          } 
+        },
+        colors: ['#6f4ef8'],
+        dataLabels: { enabled:false },
+        grid: { strokeDashArray:6, borderColor:'rgba(14,18,34,0.04)' },
+        tooltip: { theme: 'light' }
+      };
+      const areaChart = new ApexCharts(document.querySelector("#areaChart"), areaOptions);
+      areaChart.render();
+
+      // Donut Chart
+      const donutOptions = {
+        chart: { 
+          type: 'donut', 
+          height: 150 
+        },
+        series: [65, 25, 10],
+        labels: ['Returning', 'New', 'Referral'],
+        colors: ['#6f4ef8', '#06b6d4', '#ef6f6f'],
+        legend: { position: 'bottom' },
+        tooltip: { theme: 'light' }
+      };
+      const donut = new ApexCharts(document.querySelector("#donutChart"), donutOptions);
+      donut.render();
+
+      // Sparkline Chart
+      const sparkOptions = {
+        chart: { 
+          type: 'area', 
+          height: 110, 
+          toolbar: {show:false}, 
+          sparkline: {enabled:true} 
+        },
+        series: [{ 
+          data: [10, 12, 9, 14, 18, 15, 24, 20, 28, 32, 30, 36] 
+        }],
+        stroke: { curve: 'smooth', width: 2 },
+        fill: { opacity: 0.15 },
+        colors: ['#06b6d4']
+      };
+      new ApexCharts(document.querySelector("#spark1"), sparkOptions).render();
+    }
+
+    function initializeAnalyticsCharts() {
+      // Area Chart Big
+      const areaOptionsBig = {
+        chart: { 
+          type: 'area', 
+          height: 300, 
+          toolbar: {show:false} 
+        },
+        series: [{ 
+          name: 'Visitors', 
+          data: Array.from({length:30}, (_,i) => 300 + Math.round(Math.sin(i/3)*80 + Math.random()*200)) 
+        }],
+        xaxis: { 
+          categories: Array.from({length:30}, (_,i) => `Day ${i+1}`) 
+        },
+        stroke: { curve: 'smooth', width: 2 },
+        fill: { 
+          type: 'gradient', 
+          gradient: { 
+            shadeIntensity: 1, 
+            opacityFrom: 0.45, 
+            opacityTo: 0.05 
+          } 
+        },
+        colors: ['#6f4ef8'],
+        dataLabels: { enabled: false },
+        grid: { strokeDashArray: 6, borderColor: 'rgba(14,18,34,0.04)' },
+        tooltip: { theme: 'light' }
+      };
+      const areaChartBig = new ApexCharts(document.querySelector("#areaChartBig"), areaOptionsBig);
+      areaChartBig.render();
+
+      // Bar Chart Big
+      const barOptionsBig = {
+        chart: { 
+          type: 'bar', 
+          height: 300, 
+          toolbar: {show:false} 
+        },
+        series: [{ 
+          name: 'Usage', 
+          data: [85, 75, 60, 45, 30, 15] 
+        }],
+        xaxis: { 
+          categories: ['React', 'Node', 'MongoDB', 'Vue', 'React Native', 'Figma'] 
+        },
+        colors: ['#6f4ef8'],
+        plotOptions: { 
+          bar: { 
+            borderRadius: 6 
+          } 
+        },
+        tooltip: { theme: 'light' }
+      };
+      const barChartBig = new ApexCharts(document.querySelector("#barChartBig"), barOptionsBig);
+      barChartBig.render();
+
+      // Project Status Chart
+      const projectStatusOptions = {
+        chart: { 
+          type: 'radialBar', 
+          height: 250 
+        },
+        series: [75, 60, 45],
+        labels: ['Completed', 'In Progress', 'Planned'],
+        colors: ['#10b981', '#f59e0b', '#6f4ef8'],
+        plotOptions: {
+          radialBar: {
+            dataLabels: {
+              total: {
+                show: true,
+                label: 'Projects',
+                color: '#6b7280',
+                formatter: function (w) {
+                  return projectsData.length.toString();
+                }
+              }
+            }
+          }
+        }
+      };
+      const projectStatusChart = new ApexCharts(document.querySelector("#projectStatusChart"), projectStatusOptions);
+      projectStatusChart.render();
+
+      // Donut Chart Big
+      const donutBigOptions = {
+        chart: { 
+          type: 'donut', 
+          height: 250 
+        },
+        series: [45, 35, 20],
+        labels: ['Signups', 'Purchases', 'Trials'],
+        colors: ['#6f4ef8', '#06b6d4', '#f97316'],
+        legend: { position: 'bottom' },
+        tooltip: { theme: 'light' }
+      };
+      const donutBig = new ApexCharts(document.querySelector("#donutChartBig"), donutBigOptions);
+      donutBig.render();
+    }
+
+    function initializeCommitChart() {
+      const commitOptions = {
+        chart: { 
+          type: 'line', 
+          height: 300, 
+          toolbar: { show: false } 
+        },
+        series: [{ 
+          name: 'Commits', 
+          data: [12, 8, 15, 10, 18, 12, 20, 15, 22, 18, 25, 20] 
+        }],
+        xaxis: { 
+          categories: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'] 
+        },
+        stroke: { curve: 'smooth', width: 3 },
+        colors: ['#10b981'],
+        markers: { size: 5 },
+        grid: { strokeDashArray: 6, borderColor: 'rgba(14,18,34,0.04)' },
+        tooltip: { theme: 'light' }
+      };
+      const commitChart = new ApexCharts(document.querySelector("#commitChart"), commitOptions);
+      commitChart.render();
+    }
+
+    function initializeRevenueChart() {
+      const revenueOptions = {
+        chart: { 
+          type: 'bar', 
+          height: 300, 
+          toolbar: { show: false } 
+        },
+        series: [{ 
+          name: 'Revenue', 
+          data: [7200, 3500, 1300] 
+        }],
+        xaxis: { 
+          categories: ['Web Development', 'Mobile Apps', 'Consulting'] 
+        },
+        colors: ['#6f4ef8'],
+        plotOptions: { 
+          bar: { 
+            borderRadius: 6 
+          } 
+        },
+        tooltip: { theme: 'light' }
+      };
+      const revenueChart = new ApexCharts(document.querySelector("#revenueChart"), revenueOptions);
+      revenueChart.render();
+    }
+
+    function updateCharts(days) {
+      const data = Array.from({length: days}, (_, i) => Math.round(300 + Math.sin(i/3)*80 + Math.random()*200));
+      
+      // Update overview charts
+      const areaChart = ApexCharts.getChartByID("areaChart");
+      if (areaChart) {
+        areaChart.updateSeries([{ data }]);
+        areaChart.updateOptions({
+          xaxis: { categories: Array.from({length: days}, (_, i) => `Day ${i+1}`) }
+        });
+      }
+      
+      // Update analytics charts
+      const areaChartBig = ApexCharts.getChartByID("areaChartBig");
+      if (areaChartBig) {
+        areaChartBig.updateSeries([{ data }]);
+        areaChartBig.updateOptions({
+          xaxis: { categories: Array.from({length: days}, (_, i) => `Day ${i+1}`) }
+        });
+      }
+    }
+
+    // =============== Utility Functions ===============
+    function clearContact() { 
+      document.getElementById('contactForm').reset(); 
+    }
+
+    function downloadPortfolio() { 
+      showToast('CV download started!', 'info');
+    }
+
+    function initializeDashboard() {
+      // Initial navigation to overview
+      setTimeout(() => { showSection('overview'); }, 120);
+    }
+
+    // =============== Global Exports ===============
+    window.showSection = showSection;
+    window.openProjectAndShow = openProjectAndShow;
+    window.showProjectModal = showProjectModal;
+    window.showClientModal = showClientModal;
+    window.editProject = editProject;
+    window.editClient = editClient;
+    window.deleteProject = deleteProject;
+    window.deleteClient = deleteClient;
+    window.showAddProjectModal = showAddProjectModal;
+    window.showAddClientModal = showAddClientModal;
+    window.showAddEventModal = showAddEventModal;
+    window.selectEventColor = selectEventColor;
+    window.openRevenueDetails = openRevenueDetails;
+    window.toggleSidebarMobile = toggleSidebarMobile;
+    window.clearContact = clearContact;
+    window.downloadPortfolio = downloadPortfolio;
+    window.filterProjects = filterProjects;
+    window.clearProjectSearch = clearProjectSearch;
+    window.changeTheme = changeTheme;
+    window.changeSidebarColor = changeSidebarColor;
+    window.editProfile = editProfile;
+    window.changePassword = changePassword;
+    window.emailPreferences = emailPreferences;
+    window.exportData = exportData;
+    window.importData = importData;
+    window.clearCache = clearCache;
+    window.deleteAccount = deleteAccount;
+    window.resetAllData = resetAllData;
+  </script>
+</body>
+</html>
